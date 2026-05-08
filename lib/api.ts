@@ -121,6 +121,63 @@ export async function getBatchStatus(batchId: string) {
   return request<BatchStatus>(`/ingest/status/${batchId}`);
 }
 
+// ─── Workflows ────────────────────────────────────────────────────────────────
+export async function getWorkflows() {
+  return request<{ workflows: Workflow[] }>("/workflows");
+}
+export async function createWorkflow(data: Partial<Workflow>) {
+  return request<{ workflow: Workflow }>("/workflows", { method: "POST", body: JSON.stringify(data) });
+}
+export async function updateWorkflow(id: string, data: Partial<Workflow>) {
+  return request<{ workflow: Workflow }>(`/workflows/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+export async function deleteWorkflow(id: string) {
+  return request<{ deleted: { id: string; name: string } }>(`/workflows/${id}`, { method: "DELETE" });
+}
+export async function getWorkflowEvents(status?: string) {
+  const q = status ? `?status=${status}` : "";
+  return request<{ events: WorkflowEvent[] }>(`/workflows/events${q}`);
+}
+export async function getRetryQueue() {
+  return request<{ events: WorkflowEvent[] }>("/workflows/retry-queue");
+}
+export async function retryWorkflowEvent(id: string) {
+  return request<{ status: string; error?: string }>(`/workflows/events/${id}/retry`, { method: "POST" });
+}
+export async function retryAllEvents() {
+  return request<{ attempted: number; succeeded: number }>("/workflows/retry-all", { method: "POST" });
+}
+export async function getWorkflowErrors() {
+  return request<{ errors: WorkflowError[] }>("/workflows/errors");
+}
+export async function triggerWorkflowEvent(type: string, data?: Record<string, unknown>) {
+  return request<{ triggered: number; results: unknown[] }>("/workflows/trigger", {
+    method: "POST", body: JSON.stringify({ type, data: data ?? {} }),
+  });
+}
+export interface Workflow {
+  id: string; user_id: string; name: string; description?: string; enabled: boolean;
+  trigger_type: string; trigger_config: Record<string, unknown>;
+  condition_config: Record<string, unknown>; action_type: string;
+  action_config: Record<string, unknown>;
+  run_count: number; last_run_at?: string;
+  event_count?: number; error_count?: number;
+  created_at: string; updated_at: string;
+}
+export interface WorkflowEvent {
+  id: string; workflow_id?: string; workflow_name: string;
+  trigger_type: string; trigger_data: Record<string, unknown>;
+  action_type: string; action_config: Record<string, unknown>;
+  status: "pending"|"running"|"success"|"failed"|"retrying"|"cancelled";
+  result?: Record<string, unknown>; error?: string;
+  attempts: number; max_attempts: number; next_retry_at?: string;
+  duration_ms?: number; created_at: string; updated_at: string;
+}
+export interface WorkflowError {
+  error: string; count: number; last_seen: string;
+  affected_workflows: string[]; action_types: string[]; retrying_count: number;
+}
+
 // ─── Recommendations ──────────────────────────────────────────────────────────
 export async function getRecommendations() {
   return request<RecommendationsPayload>("/recommendations");
