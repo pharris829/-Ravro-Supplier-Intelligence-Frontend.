@@ -14,7 +14,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const user = getCurrentUser();
-    if (user?.role === "merchant") { router.replace("/merchant"); return; }
+    if (user?.role === "merchant")  { router.replace("/merchant");  return; }
+    if (user?.role === "supplier")  { router.replace("/supplier");  return; }
     getSuppliers({ limit: 1 }).then(r => setSupplierCount(r.pagination.total)).catch(() => {});
     searchProducts({ q: "a" } as never).then(r => setProductCount(r.pagination.total)).catch(() => {});
   }, [router]);

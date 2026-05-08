@@ -16,9 +16,11 @@ const merchantNav = [
 ];
 
 const supplierNav = [
-  { href: "/dashboard",  label: "Dashboard"  },
-  { href: "/suppliers",  label: "My Profile" },
-  { href: "/ingest",     label: "Ingest CSV" },
+  { href: "/supplier",             label: "Dashboard"       },
+  { href: "/supplier/products",    label: "Product Feeds"   },
+  { href: "/supplier/access",      label: "Merchant Access" },
+  { href: "/supplier/analytics",   label: "Analytics"       },
+  { href: "/ingest",               label: "Ingest CSV"      },
 ];
 
 const adminNav = [
@@ -52,7 +54,8 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-3 py-4 space-y-1">
         {nav.map(({ href, label }) => {
-          const active = pathname === href || (href !== "/merchant" && pathname.startsWith(href));
+          const isRoot = href === "/merchant" || href === "/supplier";
+    const active = pathname === href || (!isRoot && pathname.startsWith(href));
           return (
             <Link
               key={href}

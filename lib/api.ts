@@ -121,6 +121,41 @@ export async function getBatchStatus(batchId: string) {
   return request<BatchStatus>(`/ingest/status/${batchId}`);
 }
 
+// ─── Supplier portal ──────────────────────────────────────────────────────────
+export async function getMySupplierProfile() {
+  const r = await getSuppliers({ limit: 1 });
+  return r.suppliers[0] ?? null;
+}
+
+export async function getMyProducts(params?: { page?: number; limit?: number; sort?: string }) {
+  const q = new URLSearchParams(
+    Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
+  ).toString();
+  // When called as a supplier the backend automatically scopes to their own products
+  const r = await request<{ supplier_id: string; products: Product[]; pagination: Pagination }>(
+    `/suppliers/me/products${q ? `?${q}` : ""}`
+  ).catch(async () => {
+    // Fallback: get supplier id then fetch their products
+    const profile = await getMySupplierProfile();
+    if (!profile) return { supplier_id: "", products: [], pagination: { page: 1, limit: 20, total: 0, pages: 0 } };
+    return getSupplierProducts(profile.id, params);
+  });
+  return r;
+}
+
+export async function patchProduct(id: string, fields: {
+  price?: number;
+  stock_quantity?: number;
+  brand?: string;
+  description?: string;
+  lead_time_days?: number;
+}) {
+  return request<{ product: Product }>(`/products/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(fields),
+  });
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface User {
   id: string;
