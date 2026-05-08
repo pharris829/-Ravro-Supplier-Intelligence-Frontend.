@@ -16,6 +16,7 @@ export default function DashboardPage() {
     const user = getCurrentUser();
     if (user?.role === "merchant")  { router.replace("/merchant");  return; }
     if (user?.role === "supplier")  { router.replace("/supplier");  return; }
+    if (user?.role === "admin")     { router.replace("/admin");     return; }
     getSuppliers({ limit: 1 }).then(r => setSupplierCount(r.pagination.total)).catch(() => {});
     searchProducts({ q: "a" } as never).then(r => setProductCount(r.pagination.total)).catch(() => {});
   }, [router]);

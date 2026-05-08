@@ -121,6 +121,51 @@ export async function getBatchStatus(batchId: string) {
   return request<BatchStatus>(`/ingest/status/${batchId}`);
 }
 
+// ─── Admin ────────────────────────────────────────────────────────────────────
+export async function getAdminStats() {
+  return request<{ users: number; suppliers: number; products: number; pendingProducts: number; activeBatches: number }>("/admin/stats");
+}
+export async function getAdminUsers() {
+  return request<{ users: AdminUser[] }>("/admin/users");
+}
+export async function patchAdminUser(id: string, role: string) {
+  return request<{ user: AdminUser }>(`/admin/users/${id}`, { method: "PATCH", body: JSON.stringify({ role }) });
+}
+export async function deleteAdminUser(id: string) {
+  return request<{ deleted: { id: string; email: string } }>(`/admin/users/${id}`, { method: "DELETE" });
+}
+export async function getAdminSuppliers() {
+  return request<{ suppliers: AdminSupplier[] }>("/admin/suppliers");
+}
+export async function patchAdminSupplier(id: string, fields: { trust_score?: number; reliability_score?: number; categories?: string[] }) {
+  return request<{ supplier: AdminSupplier }>(`/admin/suppliers/${id}`, { method: "PATCH", body: JSON.stringify(fields) });
+}
+export async function getAdminBatches() {
+  return request<{ batches: AdminBatch[] }>("/admin/batches");
+}
+export async function triggerScoring() {
+  return request<{ triggered: boolean; message: string }>("/admin/scoring/run", { method: "POST" });
+}
+export async function markStaleProducts(days: number) {
+  return request<{ marked: number; days: number }>("/admin/products/mark-stale", { method: "POST", body: JSON.stringify({ days }) });
+}
+export async function getHealth() {
+  return request<{ status: string; timestamp: string }>("/health");
+}
+
+export interface AdminUser {
+  id: string; email: string; name?: string; role: string; created_at: string; updated_at: string;
+}
+export interface AdminSupplier {
+  id: string; name: string; email?: string; country?: string; categories: string[];
+  trust_score?: number; reliability_score?: number; product_count?: number;
+  owner_email?: string; owner_name?: string; created_at: string;
+}
+export interface AdminBatch {
+  id: string; filename: string; type: string; status: string;
+  total_rows: number; processed_rows: number; error_count: number; created_at: string;
+}
+
 // ─── Supplier portal ──────────────────────────────────────────────────────────
 export async function getMySupplierProfile() {
   const r = await getSuppliers({ limit: 1 });

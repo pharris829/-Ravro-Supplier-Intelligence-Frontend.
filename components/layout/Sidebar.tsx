@@ -24,10 +24,13 @@ const supplierNav = [
 ];
 
 const adminNav = [
-  { href: "/dashboard",  label: "Dashboard"  },
-  { href: "/suppliers",  label: "Suppliers"  },
-  { href: "/products",   label: "Products"   },
-  { href: "/ingest",     label: "Ingest CSV" },
+  { href: "/admin",            label: "Console"       },
+  { href: "/admin/users",      label: "Users"         },
+  { href: "/admin/suppliers",  label: "Onboarding"    },
+  { href: "/admin/health",     label: "Health"        },
+  { href: "/admin/logs",       label: "Logs"          },
+  { href: "/admin/flags",      label: "Feature Flags" },
+  { href: "/admin/overrides",  label: "Overrides"     },
 ];
 
 export default function Sidebar() {
@@ -54,7 +57,7 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-3 py-4 space-y-1">
         {nav.map(({ href, label }) => {
-          const isRoot = href === "/merchant" || href === "/supplier";
+          const isRoot = href === "/merchant" || href === "/supplier" || href === "/admin";
     const active = pathname === href || (!isRoot && pathname.startsWith(href));
           return (
             <Link
