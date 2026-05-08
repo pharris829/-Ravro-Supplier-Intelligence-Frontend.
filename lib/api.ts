@@ -121,6 +121,61 @@ export async function getBatchStatus(batchId: string) {
   return request<BatchStatus>(`/ingest/status/${batchId}`);
 }
 
+// ─── Observability ────────────────────────────────────────────────────────────
+export async function getObservabilityOverview() {
+  return request<ObsOverview>("/observability/overview");
+}
+export async function getRequestLogs(params?: { status_class?: string; method?: string; path?: string; limit?: number; offset?: number }) {
+  const q = params ? "?" + new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v])=>v!=null).map(([k,v])=>[k,String(v)]))).toString() : "";
+  return request<{ requests: RequestLog[]; total: number }>(`/observability/requests${q}`);
+}
+export async function getErrorLogs(resolved = false) {
+  return request<{ errors: ErrorLog[] }>(`/observability/errors?resolved=${resolved}`);
+}
+export async function resolveErrorLog(id: string, resolved = true) {
+  return request<{ error_log: ErrorLog }>(`/observability/errors/${id}/resolve`, { method: "PATCH", body: JSON.stringify({ resolved }) });
+}
+export async function deleteErrorLog(id: string) {
+  return request<{ deleted: boolean }>(`/observability/errors/${id}`, { method: "DELETE" });
+}
+export async function clearResolvedErrors() {
+  return request<{ deleted: number }>("/observability/errors", { method: "DELETE" });
+}
+export async function getObsMetrics() {
+  return request<ObsMetrics>("/observability/metrics");
+}
+export async function getObsEvents(status?: string) {
+  const q = status ? `?status=${status}` : "";
+  return request<{ events: ObsEvent[] }>(`/observability/events${q}`);
+}
+
+export interface RequestLog {
+  id: string; method: string; path: string; status_code: number; duration_ms: number;
+  user_id?: string; user_role?: string; ip_address?: string; user_agent?: string;
+  error_msg?: string; created_at: string;
+}
+export interface ErrorLog {
+  id: string; fingerprint: string; level: string; message: string; stack?: string;
+  code?: string; path?: string; method?: string; status_code?: number;
+  occurrence_count: number; resolved: boolean; first_seen: string; last_seen: string;
+}
+export interface ObsOverview {
+  realtime: { requests_1m: number; errors_1m: number; error_rate: string; p50_ms: number; p95_ms: number; p99_ms: number; top_paths: { path: string; count: number }[]; slowest_paths: { path: string; avg_ms: number }[] };
+  status_distribution: { bucket: string; count: number }[];
+  hourly_volume: { hour: string; requests: number; errors: number; avg_ms: number }[];
+  top_errors: ErrorLog[];
+}
+export interface ObsMetrics {
+  realtime: ObsOverview["realtime"];
+  snapshots: { req_count: number; err_count: number; p50_ms: number; p95_ms: number; p99_ms: number; error_rate: number; recorded_at: string }[];
+  slow_endpoints: { path: string; req_count: number; avg_ms: number; max_ms: number; p95_ms: number }[];
+  busy_endpoints: { path: string; req_count: number; avg_ms: number; error_count: number }[];
+}
+export interface ObsEvent {
+  id: string; workflow_name: string; trigger_type: string; action_type: string;
+  status: string; error?: string; attempts: number; duration_ms?: number; created_at: string;
+}
+
 // ─── Billing ──────────────────────────────────────────────────────────────────
 export async function getBilling() {
   return request<BillingOverview>("/billing");

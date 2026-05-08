@@ -36,7 +36,8 @@ const adminNav = [
   { href: "/admin/flags",      label: "Feature Flags" },
   { href: "/admin/overrides",  label: "Overrides"     },
   { href: "/admin/scoring",   label: "Scoring Models" },
-  { href: "/admin/rbac",      label: "RBAC"           },
+  { href: "/admin/rbac",          label: "RBAC"           },
+  { href: "/admin/observability", label: "Observability"  },
   { href: "/settings",        label: "Settings"       },
 ];
 
