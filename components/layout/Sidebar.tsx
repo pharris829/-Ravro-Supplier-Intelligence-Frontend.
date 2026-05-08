@@ -31,6 +31,7 @@ const adminNav = [
   { href: "/admin/logs",       label: "Logs"          },
   { href: "/admin/flags",      label: "Feature Flags" },
   { href: "/admin/overrides",  label: "Overrides"     },
+  { href: "/admin/scoring",   label: "Scoring Models" },
 ];
 
 export default function Sidebar() {

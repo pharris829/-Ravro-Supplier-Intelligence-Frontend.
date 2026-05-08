@@ -121,6 +121,38 @@ export async function getBatchStatus(batchId: string) {
   return request<BatchStatus>(`/ingest/status/${batchId}`);
 }
 
+// ─── Scoring ──────────────────────────────────────────────────────────────────
+export async function getScoringConfig() {
+  return request<{ configs: ScoringConfig[] }>("/scoring/config");
+}
+export async function updateScoringConfig(key: string, value: number) {
+  return request<{ config: ScoringConfig }>(`/scoring/config/${key}`, {
+    method: "PUT", body: JSON.stringify({ value }),
+  });
+}
+export async function getScoringDistributions() {
+  return request<Record<string, ScoreBucket[]>>("/scoring/distributions");
+}
+export async function getScoringSummary() {
+  return request<{ summary: ScoringSummary }>("/scoring/summary");
+}
+export async function getScoringTopProducts(model: string, dir: "asc" | "desc" = "desc", limit = 10) {
+  return request<{ products: Product[] }>(`/scoring/top?model=${model}&dir=${dir}&limit=${limit}`);
+}
+export async function runScoring() {
+  return request<{ scored: number; message: string }>("/scoring/run", { method: "POST" });
+}
+export interface ScoringConfig {
+  key: string; value: number; label: string; description?: string; group_name: string;
+}
+export interface ScoreBucket { bucket: string; count: number; }
+export interface ScoringSummary {
+  total: number; demand_scored: number; saturation_scored: number;
+  profitability_scored: number; match_scored: number;
+  avg_demand: number; avg_saturation: number; avg_profitability: number; avg_match: number;
+  last_scored_at: string | null;
+}
+
 // ─── Admin ────────────────────────────────────────────────────────────────────
 export async function getAdminStats() {
   return request<{ users: number; suppliers: number; products: number; pendingProducts: number; activeBatches: number }>("/admin/stats");
