@@ -1,2 +1,4 @@
 # Ravro-Frontend
-Ravro Frontend is a modern, high‑performance web interface built with a component‑driven architecture. It delivers a fast, intuitive, and scalable user experience for the Ravro platform, integrating real‑time data, responsive layouts, and a clean design system.
+The merchant, supplier, and admin UI for Ravro — a problem-first commerce ecosystem that surfaces high-opportunity products through demand scoring, market saturation analysis, and supplier intelligence.
+
+Built with Next.js 14, TypeScript, Tailwind CSS, and Zustand. Dark mode, purple accent design system throughout.
