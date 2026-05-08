@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 const PUBLIC_PATHS = ["/login"];
 
 // Paths that require authentication
-const PROTECTED_PREFIXES = ["/dashboard", "/suppliers", "/products", "/ingest"];
+const PROTECTED_PREFIXES = ["/dashboard", "/suppliers", "/products", "/ingest", "/merchant"];
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
