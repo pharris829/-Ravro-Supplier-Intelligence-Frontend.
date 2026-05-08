@@ -15,6 +15,7 @@ const merchantNav = [
   { href: "/merchant/inventory",    label: "Inventory Sync"   },
   { href: "/merchant/integrations", label: "Integrations"     },
   { href: "/merchant/billing",      label: "Billing & Usage"  },
+  { href: "/settings",              label: "Settings"         },
 ];
 
 const supplierNav = [
@@ -23,6 +24,7 @@ const supplierNav = [
   { href: "/supplier/access",      label: "Merchant Access" },
   { href: "/supplier/analytics",   label: "Analytics"       },
   { href: "/ingest",               label: "Ingest CSV"      },
+  { href: "/settings",             label: "Settings"        },
 ];
 
 const adminNav = [
@@ -34,6 +36,8 @@ const adminNav = [
   { href: "/admin/flags",      label: "Feature Flags" },
   { href: "/admin/overrides",  label: "Overrides"     },
   { href: "/admin/scoring",   label: "Scoring Models" },
+  { href: "/admin/rbac",      label: "RBAC"           },
+  { href: "/settings",        label: "Settings"       },
 ];
 
 export default function Sidebar() {

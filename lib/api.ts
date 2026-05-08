@@ -121,6 +121,65 @@ export async function getBatchStatus(batchId: string) {
   return request<BatchStatus>(`/ingest/status/${batchId}`);
 }
 
+// ─── Auth settings ────────────────────────────────────────────────────────────
+export async function getMe() {
+  return request<{ user: User; permissions: { resource: string; action: string }[] }>("/auth/settings/me");
+}
+// API keys
+export async function getApiKeys() {
+  return request<{ api_keys: ApiKey[] }>("/auth/settings/api-keys");
+}
+export async function createApiKey(data: { name: string; scopes: string[]; expires_at?: string }) {
+  return request<{ api_key: ApiKey & { raw_key: string } }>("/auth/settings/api-keys", {
+    method: "POST", body: JSON.stringify(data),
+  });
+}
+export async function revokeApiKey(id: string) {
+  return request<{ revoked: { id: string; name: string } }>(`/auth/settings/api-keys/${id}`, { method: "DELETE" });
+}
+// OAuth apps
+export async function getOAuthApps() {
+  return request<{ apps: OAuthApp[] }>("/auth/settings/oauth/apps");
+}
+export async function createOAuthApp(data: { name: string; description?: string; redirect_uris: string[]; scopes: string[] }) {
+  return request<{ app: OAuthApp & { client_secret: string } }>("/auth/settings/oauth/apps", {
+    method: "POST", body: JSON.stringify(data),
+  });
+}
+export async function deleteOAuthApp(id: string) {
+  return request<{ deleted: { id: string; name: string } }>(`/auth/settings/oauth/apps/${id}`, { method: "DELETE" });
+}
+// Sessions
+export async function getSessions() {
+  return request<{ sessions: Session[] }>("/auth/settings/sessions");
+}
+export async function revokeSession(id: string) {
+  return request<{ revoked: boolean }>(`/auth/settings/sessions/${id}`, { method: "DELETE" });
+}
+// RBAC (admin)
+export async function getRbac() {
+  return request<{ permissions: { role: string; resource: string; action: string }[] }>("/admin/rbac");
+}
+export async function grantPermission(role: string, resource: string, action: string) {
+  return request<{ granted: unknown }>(`/admin/rbac/${role}/${resource}/${action}`, { method: "PUT" });
+}
+export async function revokePermission(role: string, resource: string, action: string) {
+  return request<{ revoked: unknown }>(`/admin/rbac/${role}/${resource}/${action}`, { method: "DELETE" });
+}
+
+export interface ApiKey {
+  id: string; name: string; key_prefix: string; scopes: string[];
+  last_used_at?: string; expires_at?: string; revoked: boolean; created_at: string;
+}
+export interface OAuthApp {
+  id: string; name: string; description?: string; client_id: string;
+  redirect_uris: string[]; scopes: string[]; created_at: string;
+}
+export interface Session {
+  id: string; ip_address?: string; user_agent?: string;
+  last_active_at: string; revoked: boolean; created_at: string;
+}
+
 // ─── Workflows ────────────────────────────────────────────────────────────────
 export async function getWorkflows() {
   return request<{ workflows: Workflow[] }>("/workflows");
