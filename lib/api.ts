@@ -121,6 +121,57 @@ export async function getBatchStatus(batchId: string) {
   return request<BatchStatus>(`/ingest/status/${batchId}`);
 }
 
+// ─── Billing ──────────────────────────────────────────────────────────────────
+export async function getBilling() {
+  return request<BillingOverview>("/billing");
+}
+export async function getBillingPlans() {
+  return request<{ plans: BillingPlan[]; stripe_configured: boolean }>("/billing/plans");
+}
+export async function createCheckout(plan: string) {
+  return request<{ url: string; demo: boolean }>("/billing/checkout", {
+    method: "POST", body: JSON.stringify({ plan }),
+  });
+}
+export async function createPortal() {
+  return request<{ url: string; demo: boolean }>("/billing/portal", { method: "POST" });
+}
+export async function cancelSubscription() {
+  return request<{ cancelled: boolean }>("/billing/cancel", { method: "POST" });
+}
+export async function getBillingInvoices() {
+  return request<{ invoices: BillingInvoice[] }>("/billing/invoices");
+}
+export async function upgradePlanDemo(plan: string) {
+  return request<{ upgraded: boolean; plan: string }>("/billing/upgrade", {
+    method: "POST", body: JSON.stringify({ plan }),
+  });
+}
+
+export interface BillingPlan {
+  id: string; name: string; price: number | null; interval: string | null;
+  limits: Record<string, number>; features: string[];
+}
+export interface UsageMeter {
+  metric: string; used: number; limit: number; pct: number;
+}
+export interface BillingSubscription {
+  id: string; user_id: string; plan: string; status: string;
+  trial_ends_at?: string; current_period_end: string;
+  cancel_at_period_end: boolean; stripe_configured?: boolean;
+}
+export interface BillingOverview {
+  subscription: BillingSubscription | null;
+  plan: BillingPlan;
+  trial_days_remaining: number | null;
+  meters: UsageMeter[];
+  stripe_configured: boolean;
+}
+export interface BillingInvoice {
+  id: string; type: string; amount?: number; currency: string;
+  description?: string; status: string; created_at: string;
+}
+
 // ─── Auth settings ────────────────────────────────────────────────────────────
 export async function getMe() {
   return request<{ user: User; permissions: { resource: string; action: string }[] }>("/auth/settings/me");
