@@ -8,7 +8,8 @@ import { getCurrentUser, type CurrentUser } from "@/lib/auth";
 
 const merchantNav = [
   { href: "/merchant",              label: "Dashboard"        },
-  { href: "/merchant/intelligence", label: "Product Intel"    },
+  { href: "/merchant/intelligence",     label: "Product Intel"    },
+  { href: "/merchant/recommendations", label: "Recommendations"  },
   { href: "/merchant/automation",   label: "Automation"       },
   { href: "/merchant/inventory",    label: "Inventory Sync"   },
   { href: "/merchant/integrations", label: "Integrations"     },

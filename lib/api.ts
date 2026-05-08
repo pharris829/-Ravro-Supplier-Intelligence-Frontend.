@@ -121,6 +121,36 @@ export async function getBatchStatus(batchId: string) {
   return request<BatchStatus>(`/ingest/status/${batchId}`);
 }
 
+// ─── Recommendations ──────────────────────────────────────────────────────────
+export async function getRecommendations() {
+  return request<RecommendationsPayload>("/recommendations");
+}
+export interface RecommendationProduct extends Product {
+  why?: string;
+  score_delta?: number;
+  prev_score?: number;
+  current_score?: number;
+  pct_change?: number;
+  supplier_trust?: number;
+}
+export interface NicheRecommendation {
+  category: string;
+  product_count: number;
+  avg_saturation: number;
+  avg_demand: number;
+  avg_match: number;
+  avg_profitability: number;
+  opportunity_gap: number;
+  tier: "high" | "medium" | "low";
+  top_product?: string;
+}
+export interface RecommendationsPayload {
+  opportunities: RecommendationProduct[];
+  trending: RecommendationProduct[];
+  niches: NicheRecommendation[];
+  generated_at: string;
+}
+
 // ─── Scoring ──────────────────────────────────────────────────────────────────
 export async function getScoringConfig() {
   return request<{ configs: ScoringConfig[] }>("/scoring/config");
@@ -265,6 +295,8 @@ export interface Product {
   description?: string;
   match_score?: number;
   demand_score?: number;
+  saturation_score?: number;
+  profitability_score?: number;
   ingestion_status: string;
   validation_errors?: unknown[];
   supplier_id?: string;
