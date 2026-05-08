@@ -1,13 +1,26 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+// All requests go through the Next.js proxy at /api/* → backend
+const BASE = "/api";
 
-function getToken() {
+// ─── Token helpers (localStorage + cookie so middleware can read it) ──────────
+function setToken(token: string) {
+  localStorage.setItem("access_token", token);
+  document.cookie = `access_token=${token}; path=/; SameSite=Lax; max-age=${7 * 24 * 60 * 60}`;
+}
+
+function clearToken() {
+  localStorage.removeItem("access_token");
+  document.cookie = "access_token=; path=/; max-age=0";
+}
+
+function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("access_token");
 }
 
+// ─── Core fetch wrapper ───────────────────────────────────────────────────────
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -17,7 +30,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (res.status === 401) {
-    localStorage.removeItem("access_token");
+    clearToken();
     window.location.href = "/login";
   }
 
@@ -28,31 +41,33 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export async function login(email: string, password: string) {
-  const data = await request<{ access_token: string; user: { id: string; email: string; role: string } }>(
+  const data = await request<{ access_token: string; user: User }>(
     "/auth/login",
     { method: "POST", body: JSON.stringify({ email, password }) }
   );
-  localStorage.setItem("access_token", data.access_token);
+  setToken(data.access_token);
   return data;
 }
 
 export async function register(email: string, password: string, role: string, name: string) {
-  const data = await request<{ access_token: string; user: { id: string; email: string; role: string } }>(
+  const data = await request<{ access_token: string; user: User }>(
     "/auth/register",
     { method: "POST", body: JSON.stringify({ email, password, role, name }) }
   );
-  localStorage.setItem("access_token", data.access_token);
+  setToken(data.access_token);
   return data;
 }
 
 export function logout() {
-  localStorage.removeItem("access_token");
+  clearToken();
   window.location.href = "/login";
 }
 
 // ─── Suppliers ────────────────────────────────────────────────────────────────
 export async function getSuppliers(params?: { page?: number; limit?: number; category?: string; min_trust?: number }) {
-  const q = new URLSearchParams(params as Record<string, string>).toString();
+  const q = new URLSearchParams(
+    Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
+  ).toString();
   return request<{ suppliers: Supplier[]; pagination: Pagination }>(`/suppliers${q ? `?${q}` : ""}`);
 }
 
@@ -61,8 +76,10 @@ export async function getSupplier(id: string) {
 }
 
 export async function getSupplierProducts(id: string, params?: { page?: number; sort?: string; min_score?: number }) {
-  const q = new URLSearchParams(params as Record<string, string>).toString();
-  return request<{ products: Product[]; pagination: Pagination }>(`/suppliers/${id}/products${q ? `?${q}` : ""}`);
+  const q = new URLSearchParams(
+    Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
+  ).toString();
+  return request<{ supplier_id: string; products: Product[]; pagination: Pagination }>(`/suppliers/${id}/products${q ? `?${q}` : ""}`);
 }
 
 // ─── Products ─────────────────────────────────────────────────────────────────
@@ -70,7 +87,7 @@ export async function searchProducts(params: { q: string; category?: string; min
   const q = new URLSearchParams(
     Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
   ).toString();
-  return request<{ products: Product[]; pagination: Pagination }>(`/products/search?${q}`);
+  return request<{ query: string; products: Product[]; pagination: Pagination }>(`/products/search?${q}`);
 }
 
 export async function getProduct(id: string) {
@@ -90,7 +107,7 @@ export async function uploadCSV(file: File, type: "suppliers" | "products") {
   const token = getToken();
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${BASE_URL}/ingest/csv?type=${type}`, {
+  const res = await fetch(`${BASE}/ingest/csv?type=${type}`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: form,
@@ -105,6 +122,12 @@ export async function getBatchStatus(batchId: string) {
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+export interface User {
+  id: string;
+  email: string;
+  role: string;
+}
+
 export interface Supplier {
   id: string;
   name: string;
@@ -127,12 +150,15 @@ export interface Product {
   price?: number;
   stock_quantity: number;
   brand?: string;
+  description?: string;
   match_score?: number;
   demand_score?: number;
   ingestion_status: string;
+  validation_errors?: unknown[];
   supplier_id?: string;
   supplier_name?: string;
   supplier_trust_score?: number;
+  supplier_reliability_score?: number;
 }
 
 export interface ProductScores {
