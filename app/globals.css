@@ -1,12 +1,76 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
+/* ─── Ravro brand tokens ─────────────────────────────────────────────────────── */
 :root {
-  --background: #0f0f0f;
-  --foreground: #f5f5f5;
+  --mint:          #00F5C4;
+  --mint-dim:      #00C49A;
+  --mint-glow:     rgba(0,245,196,0.18);
+  --silver:        #B8BCC8;
+  --silver-bright: #D8DCE8;
+  --obsidian:      #080A0F;
+  --surface:       #0E1118;
+  --surface2:      #141820;
+  --surface3:      #1C2130;
+  --border:        rgba(184,188,200,0.12);
+  --border-mint:   rgba(0,245,196,0.25);
+  --text-primary:  #E8EAF0;
+  --text-secondary:#8890A4;
+  --text-dim:      #4A5068;
+  --red:           #FF4B6E;
+  --amber:         #FFB84D;
+  --blue:          #4D9FFF;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: "Inter", system-ui, sans-serif;
+/* ─── Base ───────────────────────────────────────────────────────────────────── */
+*   { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--obsidian);
+  color: var(--text-primary);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Typography helpers ─────────────────────────────────────────────────────── */
+.font-orbitron { font-family: "Orbitron", monospace; }
+.font-grotesk  { font-family: "Space Grotesk", sans-serif; }
+
+/* ─── Mint grid overlay (background pattern) ────────────────────────────────── */
+.grid-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,245,196,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,196,0.022) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--mint-dim); }
+
+/* ─── Selection ──────────────────────────────────────────────────────────────── */
+::selection { background: rgba(0,245,196,0.25); color: var(--silver-bright); }
+
+/* ─── Pulse animation ────────────────────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* ─── Mint top-edge glow on cards ────────────────────────────────────────────── */
+.card-mint-edge::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--mint), transparent);
 }

@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Ravro",
-  description: "Problem-first commerce intelligence platform",
+  title: "Ravro — Command Your Data",
+  description: "Real-time product intelligence for suppliers and merchants. Enterprise analytics, machine-speed decisions.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-neutral-950 text-neutral-100 antialiased">
+      <body style={{ background: "var(--obsidian)", color: "var(--text-primary)", minHeight: "100vh" }}>
         {children}
       </body>
     </html>
