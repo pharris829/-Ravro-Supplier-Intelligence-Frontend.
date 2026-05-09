@@ -121,6 +121,46 @@ export async function getBatchStatus(batchId: string) {
   return request<BatchStatus>(`/ingest/status/${batchId}`);
 }
 
+// ─── Developer API (v1 public + webhooks) ─────────────────────────────────────
+export async function getApiV1Info() {
+  return request<{ api: string; version: string; endpoints: string[] }>("/api/v1");
+}
+export async function getApiChangelog() {
+  return request<{ changelog: ApiChangelog[] }>("/developer/changelog");
+}
+export async function getWebhookEndpoints() {
+  return request<{ data: WebhookEndpoint[]; available_events: string[] }>("/api/v1/webhooks");
+}
+export async function createWebhookEndpoint(data: { url: string; events: string[]; description?: string }) {
+  return request<{ data: WebhookEndpoint }>("/api/v1/webhooks", { method: "POST", body: JSON.stringify(data) });
+}
+export async function updateWebhookEndpoint(id: string, data: Partial<WebhookEndpoint>) {
+  return request<{ data: WebhookEndpoint }>(`/api/v1/webhooks/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+export async function deleteWebhookEndpoint(id: string) {
+  return request<{ deleted: boolean }>(`/api/v1/webhooks/${id}`, { method: "DELETE" });
+}
+export async function testWebhookEndpoint(id: string) {
+  return request<{ sent: boolean }>(`/api/v1/webhooks/${id}/test`, { method: "POST" });
+}
+export async function getWebhookDeliveries(id: string) {
+  return request<{ data: WebhookDelivery[] }>(`/api/v1/webhooks/${id}/deliveries`);
+}
+
+export interface WebhookEndpoint {
+  id: string; url: string; description?: string; events: string[];
+  secret_hint: string; secret?: string; enabled: boolean;
+  delivery_count?: number; failure_count?: number; created_at: string;
+}
+export interface WebhookDelivery {
+  id: string; event_type: string; status: string;
+  response_status?: number; attempts: number; duration_ms?: number; created_at: string;
+}
+export interface ApiChangelog {
+  id: string; version: string; title: string; description: string;
+  breaking: boolean; released_at: string;
+}
+
 // ─── Observability ────────────────────────────────────────────────────────────
 export async function getObservabilityOverview() {
   return request<ObsOverview>("/observability/overview");

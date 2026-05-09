@@ -15,6 +15,7 @@ const merchantNav = [
   { href: "/merchant/inventory",    label: "Inventory Sync"   },
   { href: "/merchant/integrations", label: "Integrations"     },
   { href: "/merchant/billing",      label: "Billing & Usage"  },
+  { href: "/developer",             label: "Developer"        },
   { href: "/settings",              label: "Settings"         },
 ];
 
@@ -24,6 +25,7 @@ const supplierNav = [
   { href: "/supplier/access",      label: "Merchant Access" },
   { href: "/supplier/analytics",   label: "Analytics"       },
   { href: "/ingest",               label: "Ingest CSV"      },
+  { href: "/developer",            label: "Developer"       },
   { href: "/settings",             label: "Settings"        },
 ];
 
