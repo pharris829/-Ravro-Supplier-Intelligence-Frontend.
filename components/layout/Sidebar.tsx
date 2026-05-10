@@ -9,6 +9,7 @@ import { getCurrentUser, type CurrentUser } from "@/lib/auth";
 const merchantNav = [
   { href: "/merchant",                  label: "Dashboard"       },
   { href: "/merchant/intelligence",     label: "Intelligence"    },
+  { href: "/merchant/trends",           label: "Trends"          },
   { href: "/merchant/recommendations",  label: "Recommendations" },
   { href: "/merchant/workflows",        label: "Workflows"       },
   { href: "/merchant/automation",       label: "Automation"      },

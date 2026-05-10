@@ -121,6 +121,46 @@ export async function getBatchStatus(batchId: string) {
   return request<BatchStatus>(`/ingest/status/${batchId}`);
 }
 
+// ─── Trends ───────────────────────────────────────────────────────────────────
+export async function getTrendsOverview() {
+  return request<TrendsOverview>("/trends/overview");
+}
+export async function getTrendsKeyword(keyword: string, options?: { geo?: string; refresh?: boolean }) {
+  const q = new URLSearchParams({ ...(options?.geo ? { geo: options.geo } : {}), ...(options?.refresh ? { refresh: "1" } : {}) }).toString();
+  return request<{ data: TrendRecord }>(`/trends/keyword/${encodeURIComponent(keyword)}${q ? `?${q}` : ""}`);
+}
+export async function getTrendsKeywordRelated(keyword: string, geo = "US") {
+  return request<{ related: TrendRecord; rising: RisingQuery[] }>(`/trends/keyword/${encodeURIComponent(keyword)}/related?geo=${geo}`);
+}
+export async function getTrendsByRegion(keyword: string, geo = "US") {
+  return request<{ data: TrendRecord }>(`/trends/keyword/${encodeURIComponent(keyword)}/by-region?geo=${geo}`);
+}
+export async function getCategoryTrends(categories?: string) {
+  const q = categories ? `?categories=${encodeURIComponent(categories)}` : "";
+  return request<{ data: CategoryTrend[] }>(`/trends/categories${q}`);
+}
+export async function getProductTrends(limit = 20) {
+  return request<{ data: TrendedProduct[] }>(`/trends/products?limit=${limit}`);
+}
+export async function triggerTrendsBatchScore(limit = 50) {
+  return request<{ scored: number; message: string }>("/trends/score/batch", { method: "POST", body: JSON.stringify({ limit }) });
+}
+
+export interface TrendRecord {
+  id?: string; keyword: string; trend_score?: number; fetched_at?: string;
+  data: { timeline?: { formattedTime?: string; value?: number[] }[]; ranked?: unknown[]; regions?: unknown[] };
+}
+export interface RisingQuery { query: string; value: string; }
+export interface CategoryTrend { category: string; trend_score: number | null; data?: TrendRecord["data"]; }
+export interface TrendedProduct {
+  id: string; product_name: string; category?: string; match_score?: number;
+  trend_score?: number; supplier_name?: string;
+}
+export interface TrendsOverview {
+  top_keywords: { keyword: string; category?: string; trend_score: number; fetched_at: string }[];
+  stats: { scored: number; total: number; avg_trend: number; max_trend: number };
+}
+
 // ─── Developer API (v1 public + webhooks) ─────────────────────────────────────
 export async function getApiV1Info() {
   return request<{ api: string; version: string; endpoints: string[] }>("/api/v1");
