@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { getAdminSuppliers, patchAdminSupplier, type AdminSupplier } from "@/lib/api";
 
 export default function AdminSuppliersPage() {
@@ -66,8 +66,8 @@ export default function AdminSuppliersPage() {
             {loading ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-500 text-sm">Loading…</td></tr>
             ) : suppliers.map(s => (
-              <>
-                <tr key={s.id} className="border-b border-neutral-800/50 hover:bg-neutral-800/20 transition-colors">
+              <Fragment key={s.id}>
+                <tr className="border-b border-neutral-800/50 hover:bg-neutral-800/20 transition-colors">
                   <td className="px-4 py-3">
                     <p className="text-white font-medium text-sm">{s.name}</p>
                     <p className="text-xs text-neutral-600">{s.categories?.join(", ") || "—"}</p>
@@ -92,7 +92,7 @@ export default function AdminSuppliersPage() {
                   </td>
                 </tr>
                 {editing === s.id && (
-                  <tr key={`edit-${s.id}`} className="border-b border-indigo-900/30 bg-neutral-800/30">
+                  <tr className="border-b border-indigo-900/30 bg-neutral-800/30">
                     <td colSpan={6} className="px-4 py-3">
                       <div className="flex items-center gap-4">
                         <div>
@@ -121,7 +121,7 @@ export default function AdminSuppliersPage() {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>
