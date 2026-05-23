@@ -1,7 +1,33 @@
 @import "tailwindcss";
-/* Fonts loaded via <link> in layout.tsx */
 
-/* ─── Ravro brand tokens ─────────────────────────────────────────────────────── */
+/* ─── Tailwind v4 theme — brand tokens as utility classes ────────────────────
+   These map CSS vars → Tailwind utilities:
+   bg-mint, text-obsidian, border-surface, font-orbitron, etc.
+──────────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* Colors */
+  --color-mint:           #00F5C4;
+  --color-mint-dim:       #00C49A;
+  --color-silver:         #B8BCC8;
+  --color-silver-bright:  #D8DCE8;
+  --color-obsidian:       #080A0F;
+  --color-surface:        #0E1118;
+  --color-surface-2:      #141820;
+  --color-surface-3:      #1C2130;
+  --color-text-primary:   #E8EAF0;
+  --color-text-secondary: #8890A4;
+  --color-text-dim:       #4A5068;
+  --color-red:            #FF4B6E;
+  --color-amber:          #FFB84D;
+  --color-blue:           #4D9FFF;
+  --color-maroon:         #800020;
+
+  /* Fonts */
+  --font-orbitron: "Orbitron", monospace;
+  --font-grotesk:  "Space Grotesk", sans-serif;
+}
+
+/* ─── Raw CSS vars (for use with var() in inline styles / legacy code) ──────── */
 :root {
   --mint:          #00F5C4;
   --mint-dim:      #00C49A;
@@ -23,7 +49,7 @@
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────────── */
-*   { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
   background: var(--obsidian);
@@ -37,7 +63,7 @@ html, body {
 .font-orbitron { font-family: "Orbitron", monospace; }
 .font-grotesk  { font-family: "Space Grotesk", sans-serif; }
 
-/* ─── Mint grid overlay (background pattern) ────────────────────────────────── */
+/* ─── Mint grid overlay ──────────────────────────────────────────────────────── */
 .grid-bg::before {
   content: "";
   position: fixed;
@@ -59,14 +85,14 @@ html, body {
 /* ─── Selection ──────────────────────────────────────────────────────────────── */
 ::selection { background: rgba(0,245,196,0.25); color: var(--silver-bright); }
 
-/* ─── Pulse animation ────────────────────────────────────────────────────────── */
+/* ─── Animations ─────────────────────────────────────────────────────────────── */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.3; }
 }
 .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
 
-/* ─── Mint top-edge glow on cards ────────────────────────────────────────────── */
+/* ─── Card accent ────────────────────────────────────────────────────────────── */
 .card-mint-edge::before {
   content: "";
   position: absolute;
