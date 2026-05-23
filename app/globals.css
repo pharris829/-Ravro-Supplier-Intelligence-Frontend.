@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
-/* ─── Tailwind v4 theme — brand tokens as utility classes ────────────────────
-   These map CSS vars → Tailwind utilities:
-   bg-mint, text-obsidian, border-surface, font-orbitron, etc.
+/* ─── Tailwind v4 theme ───────────────────────────────────────────────────────
+   Generates: bg-mint, text-obsidian, border-surface-2, shadow-card, etc.
 ──────────────────────────────────────────────────────────────────────────── */
 @theme {
   /* Colors */
@@ -25,9 +24,24 @@
   /* Fonts */
   --font-orbitron: "Orbitron", monospace;
   --font-grotesk:  "Space Grotesk", sans-serif;
+
+  /* Shadows */
+  --shadow-subtle:  0 1px 4px rgba(0,0,0,0.35);
+  --shadow-card:    0 4px 16px rgba(0,0,0,0.45);
+  --shadow-elevated:0 8px 32px rgba(0,0,0,0.55);
+  --shadow-mint:    0 0 24px rgba(0,245,196,0.12);
+  --shadow-mint-lg: 0 0 48px rgba(0,245,196,0.18);
+  --shadow-red:     0 0 20px rgba(255,75,110,0.15);
+
+  /* Border radius */
+  --radius-sm:  4px;
+  --radius-md:  6px;
+  --radius-lg:  10px;
+  --radius-xl:  14px;
+  --radius-full:9999px;
 }
 
-/* ─── Raw CSS vars (for use with var() in inline styles / legacy code) ──────── */
+/* ─── Raw CSS vars (for var() in inline styles) ──────────────────────────── */
 :root {
   --mint:          #00F5C4;
   --mint-dim:      #00C49A;
@@ -48,7 +62,7 @@
   --blue:          #4D9FFF;
 }
 
-/* ─── Base ───────────────────────────────────────────────────────────────────── */
+/* ─── Base ───────────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
@@ -59,11 +73,17 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ─── Typography helpers ─────────────────────────────────────────────────────── */
+/* ─── Typography helpers ─────────────────────────────────────────────────── */
 .font-orbitron { font-family: "Orbitron", monospace; }
 .font-grotesk  { font-family: "Space Grotesk", sans-serif; }
 
-/* ─── Mint grid overlay ──────────────────────────────────────────────────────── */
+/* ─── Focus ring ─────────────────────────────────────────────────────────── */
+.focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0,245,196,0.35);
+}
+
+/* ─── Mint grid overlay ──────────────────────────────────────────────────── */
 .grid-bg::before {
   content: "";
   position: fixed;
@@ -76,23 +96,39 @@ html, body {
   z-index: 0;
 }
 
-/* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--surface); }
 ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--mint-dim); }
 
-/* ─── Selection ──────────────────────────────────────────────────────────────── */
+/* ─── Selection ──────────────────────────────────────────────────────────── */
 ::selection { background: rgba(0,245,196,0.25); color: var(--silver-bright); }
 
-/* ─── Animations ─────────────────────────────────────────────────────────────── */
+/* ─── Animations ─────────────────────────────────────────────────────────── */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.3; }
 }
 .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
 
-/* ─── Card accent ────────────────────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fade-in 0.2s ease-out forwards; }
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+/* ─── Card mint edge ─────────────────────────────────────────────────────── */
 .card-mint-edge::before {
   content: "";
   position: absolute;
