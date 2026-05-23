@@ -79,7 +79,7 @@ export default function LandingPage() {
         </ul>
 
         <div style={{ display: "flex", gap: 12 }}>
-          <Link href="/suppliers/portal" style={{
+          <Link href="/supplier-portal" style={{
             fontFamily: "'Space Grotesk',sans-serif", fontSize: 10, letterSpacing: 2,
             textTransform: "uppercase", fontWeight: 600, color: "var(--mint)",
             background: "rgba(0,245,196,0.08)", border: "1px solid var(--border-mint)", padding: "7px 18px",
@@ -154,7 +154,7 @@ export default function LandingPage() {
             }}>
               Initialize System
             </Link>
-            <Link href="/suppliers/portal" className="font-grotesk" style={{
+            <Link href="/supplier-portal" className="font-grotesk" style={{
               fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", fontWeight: 700,
               color: "var(--mint)", background: "rgba(0,245,196,0.08)",
               border: "1px solid var(--border-mint)",
