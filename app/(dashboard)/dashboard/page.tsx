@@ -12,10 +12,14 @@ import Heatmap from "@/components/charts/Heatmap";
 import { useDashboardIntel } from "@/modules/intelligence/hooks/useDashboardIntel";
 
 export default function DashboardPage() {
-  const { data, loading } = useDashboardIntel();
+  const { data, loading, error } = useDashboardIntel();
 
   if (loading) {
-    return <div className="p-6">Loading intelligence...</div>;
+    return <div className="p-6 text-text-secondary">Loading intelligence...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-red text-sm">Intelligence feed unavailable: {error}</div>;
   }
 
   const scores = data.scores;
