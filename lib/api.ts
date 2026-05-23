@@ -1,8 +1,14 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
+function authHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const token = localStorage.getItem("ravro_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export const api = {
   get: async (path: string) => {
-    const res = await fetch(`${BASE}${path}`);
+    const res = await fetch(`${BASE}${path}`, { headers: authHeaders() });
     if (!res.ok) throw new Error("API error");
     return res.json();
   },
@@ -10,7 +16,7 @@ export const api = {
   post: async (path: string, body: unknown) => {
     const res = await fetch(`${BASE}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(body),
     });
     if (!res.ok) {

@@ -6,7 +6,7 @@ export interface CurrentUser {
 
 export function getCurrentUser(): CurrentUser | null {
   if (typeof window === "undefined") return null;
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("ravro_token");
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
