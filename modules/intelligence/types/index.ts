@@ -1,60 +1,54 @@
 // ─── Shared ───────────────────────────────────────────────────────────────────
 export interface TrendPoint {
-  label: string;
-  value: number;
+  label: string;   // e.g., "Mon", "Week 12", "Q1"
+  value: number;   // score or metric value
 }
 
-export interface FeatureGapRow {
-  id: string;
-  data: { x: string; y: number }[];
-}
-
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-export interface DashboardScores {
+export interface ScoreSet {
   opportunity: number;
   saturation: number;
   velocity: number;
   reliability: number;
 }
 
-export interface DashboardTrends {
-  opportunity: TrendPoint[];
-  velocity: TrendPoint[];
-  saturation: TrendPoint[];
+export interface FeatureGap {
+  feature: string;
+  severity: number; // 1–5 scale
 }
 
+export interface HeatmapRow {
+  id: string; // row label
+  data: { x: string; y: number }[]; // Nivo heatmap format
+}
+
+export interface AlertMessage {
+  message: string;
+  level: "info" | "warning" | "critical";
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 export interface DashboardIntel {
-  scores: DashboardScores;
-  trends: DashboardTrends;
-  featureGaps: FeatureGapRow[];
-  alerts: string[];
+  scores: ScoreSet;
+  trends: {
+    opportunity: TrendPoint[];
+    velocity: TrendPoint[];
+    saturation: TrendPoint[];
+  };
+  featureGaps: HeatmapRow[];
+  alerts: AlertMessage[];
 }
 
 // ─── Product ──────────────────────────────────────────────────────────────────
-export interface ProductScores {
-  opportunity: number;
-  demand: number;
-  saturation: number;
-  featureGapSeverity: number;
-}
-
 export interface ProductIntel {
   productId: string;
-  scores: ProductScores;
+  scores: ScoreSet;
   trends: {
     opportunity: TrendPoint[];
   };
-  featureGaps: FeatureGapRow[];
+  featureGaps: HeatmapRow[];
 }
 
 // ─── Supplier ─────────────────────────────────────────────────────────────────
-export interface SupplierScores {
-  reliability: number;
-  catalogQuality: number;
-  onTimeDelivery: number;
-  riskIndex: number;
-}
-
 export interface CatalogRow {
   product: string;
   completeness: number;
@@ -64,22 +58,15 @@ export interface CatalogRow {
 
 export interface SupplierIntel {
   supplierId: string;
-  scores: SupplierScores;
+  scores: ScoreSet;
   catalog: CatalogRow[];
 }
 
 // ─── Category ─────────────────────────────────────────────────────────────────
-export interface CategoryScores {
-  opportunity: number;
-  saturation: number;
-  velocity: number;
-  avgReliability: number;
-}
-
 export interface CategoryIntel {
   categoryId: string;
-  scores: CategoryScores;
+  scores: ScoreSet;
   risingProducts: string[];
   decliningProducts: string[];
-  featureGaps: FeatureGapRow[];
+  featureGaps: HeatmapRow[];
 }
