@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { login, register } from "@/lib/api";
 
@@ -9,12 +9,21 @@ type Mode = "login" | "register";
 const ROLES = ["merchant", "supplier"] as const;
 
 export default function LoginPage() {
-  const router = useRouter();
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+
   const [mode, setMode]         = useState<Mode>("login");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [name, setName]         = useState("");
   const [role, setRole]         = useState<"merchant" | "supplier">("merchant");
+
+  useEffect(() => {
+    const m = searchParams.get("mode");
+    const r = searchParams.get("role");
+    if (m === "register") setMode("register");
+    if (r === "supplier" || r === "merchant") setRole(r);
+  }, [searchParams]);
   const [error, setError]       = useState("");
   const [loading, setLoading]   = useState(false);
 

@@ -79,6 +79,14 @@ export default function LandingPage() {
         </ul>
 
         <div style={{ display: "flex", gap: 12 }}>
+          <Link href="/suppliers/portal" style={{
+            fontFamily: "'Space Grotesk',sans-serif", fontSize: 10, letterSpacing: 2,
+            textTransform: "uppercase", fontWeight: 600, color: "var(--mint)",
+            background: "rgba(0,245,196,0.08)", border: "1px solid var(--border-mint)", padding: "7px 18px",
+            borderRadius: 2, textDecoration: "none", display: "inline-block",
+          }}>
+            Supplier Portal
+          </Link>
           <Link href="/login" style={{
             fontFamily: "'Space Grotesk',sans-serif", fontSize: 10, letterSpacing: 2,
             textTransform: "uppercase", fontWeight: 600, color: "var(--silver)",
@@ -138,7 +146,7 @@ export default function LandingPage() {
             Enterprise scoring, machine-speed decisions, zero compromise on clarity.
           </p>
 
-          <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <Link href="/login" className="font-grotesk" style={{
               fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", fontWeight: 700,
               color: "var(--obsidian)", background: "var(--mint)", border: "none",
@@ -146,13 +154,14 @@ export default function LandingPage() {
             }}>
               Initialize System
             </Link>
-            <button className="font-grotesk" style={{
+            <Link href="/suppliers/portal" className="font-grotesk" style={{
               fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", fontWeight: 700,
-              color: "var(--silver)", background: "transparent", border: "1px solid var(--border)",
-              padding: "13px 30px", borderRadius: 2, cursor: "pointer",
+              color: "var(--mint)", background: "rgba(0,245,196,0.08)",
+              border: "1px solid var(--border-mint)",
+              padding: "13px 30px", borderRadius: 2, textDecoration: "none", display: "inline-block",
             }}>
-              View Demo
-            </button>
+              List Your Products →
+            </Link>
           </div>
         </div>
 
