@@ -5,26 +5,31 @@ import Link from "next/link";
 import { getApiKeys, createApiKey, revokeApiKey, type ApiKey } from "@/lib/api";
 
 const ALL_SCOPES = [
-  { value: "read:products",        label: "Read Products"         },
-  { value: "write:products",       label: "Write Products"        },
-  { value: "read:suppliers",       label: "Read Suppliers"        },
-  { value: "read:recommendations", label: "Recommendations"       },
-  { value: "read:workflows",       label: "Read Workflows"        },
-  { value: "write:workflows",      label: "Write Workflows"       },
-  { value: "read:scoring",         label: "Scoring Data"          },
-  { value: "read:analytics",       label: "Analytics"             },
+  { value: "read:products",        label: "Read Products"    },
+  { value: "write:products",       label: "Write Products"   },
+  { value: "read:suppliers",       label: "Read Suppliers"   },
+  { value: "read:recommendations", label: "Recommendations"  },
+  { value: "read:workflows",       label: "Read Workflows"   },
+  { value: "write:workflows",      label: "Write Workflows"  },
+  { value: "read:scoring",         label: "Scoring Data"     },
+  { value: "read:analytics",       label: "Analytics"        },
 ];
 
+const inputStyle: React.CSSProperties = {
+  background: "var(--surface3)", border: "1px solid var(--border)", borderRadius: 4,
+  padding: "7px 10px", fontSize: 11, color: "var(--text-primary)", outline: "none",
+};
+
 export default function ApiKeysPage() {
-  const [keys, setKeys]         = useState<ApiKey[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [keys,     setKeys]     = useState<ApiKey[]>([]);
+  const [loading,  setLoading]  = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [name, setName]         = useState("");
-  const [scopes, setScopes]     = useState<string[]>(["read:products", "read:recommendations"]);
-  const [expires, setExpires]   = useState("");
+  const [name,     setName]     = useState("");
+  const [scopes,   setScopes]   = useState<string[]>(["read:products", "read:recommendations"]);
+  const [expires,  setExpires]  = useState("");
   const [creating, setCreating] = useState(false);
-  const [newKey, setNewKey]     = useState<string | null>(null);
-  const [copied, setCopied]     = useState(false);
+  const [newKey,   setNewKey]   = useState<string | null>(null);
+  const [copied,   setCopied]   = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,8 +44,7 @@ export default function ApiKeysPage() {
       const r = await createApiKey({ name, scopes, ...(expires ? { expires_at: new Date(expires).toISOString() } : {}) });
       setNewKey(r.api_key.raw_key);
       setKeys(prev => [{ ...r.api_key, revoked: false }, ...prev]);
-      setShowForm(false);
-      setName(""); setScopes(["read:products"]); setExpires("");
+      setShowForm(false); setName(""); setScopes(["read:products"]); setExpires("");
     } finally { setCreating(false); }
   }
 
@@ -55,8 +59,7 @@ export default function ApiKeysPage() {
   function copyKey() {
     if (!newKey) return;
     navigator.clipboard.writeText(newKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
   }
 
   function toggleScope(s: string) {
@@ -64,108 +67,93 @@ export default function ApiKeysPage() {
   }
 
   const active  = keys.filter(k => !k.revoked);
-  const revoked = keys.filter(k => k.revoked);
+  const revoked = keys.filter(k =>  k.revoked);
 
   return (
-    <div className="max-w-3xl">
-      <Link href="/settings" className="text-xs text-neutral-500 hover:text-white mb-4 inline-block">← Settings</Link>
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ maxWidth: 680 }}>
+      <Link href="/settings" style={{ fontSize: 10, color: "var(--text-dim)", textDecoration: "none", display: "inline-block", marginBottom: 16 }}>← Settings</Link>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
         <div>
-          <h1 className="text-2xl font-semibold text-white">API Keys</h1>
-          <p className="text-sm text-neutral-400 mt-1">Authenticate programmatic access to the Ravro API</p>
+          <div style={{ fontSize: 7, letterSpacing: 2.5, color: "var(--text-dim)", marginBottom: 4 }} className="font-orbitron">ACCOUNT</div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>API Keys</h1>
+          <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>Authenticate programmatic access to the Ravro API</p>
         </div>
-        <button onClick={() => setShowForm(true)} disabled={showForm}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+        <button onClick={() => setShowForm(true)} disabled={showForm} style={{ background: "var(--mint)", color: "var(--obsidian)", border: "none", borderRadius: 4, padding: "8px 16px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
           + Generate key
         </button>
       </div>
 
-      {/* New key reveal */}
       {newKey && (
-        <div className="bg-emerald-950 border border-emerald-800 rounded-xl p-5 mb-6">
-          <p className="text-sm font-semibold text-emerald-400 mb-2">⚠ Copy your key now — it will never be shown again</p>
-          <div className="flex items-center gap-3">
-            <code className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white font-mono break-all">
-              {newKey}
-            </code>
-            <button onClick={copyKey}
-              className={`shrink-0 text-sm px-3 py-2 rounded-lg border transition-colors ${copied ? "bg-emerald-900 text-emerald-400 border-emerald-700" : "bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-700"}`}>
+        <div style={{ background: "rgba(0,245,196,0.06)", border: "1px solid rgba(0,245,196,0.3)", borderRadius: 4, padding: "16px 18px", marginBottom: 18 }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: "var(--mint)", marginBottom: 8 }}>⚠ Copy your key now — it will never be shown again</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <code style={{ flex: 1, background: "var(--surface3)", border: "1px solid var(--border)", borderRadius: 4, padding: "8px 10px", fontSize: 10, color: "var(--text-primary)", wordBreak: "break-all", fontFamily: "monospace" }}>{newKey}</code>
+            <button onClick={copyKey} style={{ flexShrink: 0, fontSize: 10, padding: "7px 12px", borderRadius: 4, cursor: "pointer", background: copied ? "rgba(0,245,196,0.08)" : "var(--surface3)", color: copied ? "var(--mint)" : "var(--text-secondary)", border: `1px solid ${copied ? "var(--border-mint)" : "var(--border)"}` }}>
               {copied ? "Copied!" : "Copy"}
             </button>
           </div>
-          <button onClick={() => setNewKey(null)} className="text-xs text-neutral-500 mt-2 hover:text-neutral-300">
-            I've copied it — dismiss
-          </button>
+          <button onClick={() => setNewKey(null)} style={{ fontSize: 10, color: "var(--text-dim)", background: "none", border: "none", cursor: "pointer", marginTop: 8 }}>I&apos;ve copied it — dismiss</button>
         </div>
       )}
 
-      {/* Create form */}
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-neutral-900 border border-indigo-800 rounded-xl p-6 mb-6 space-y-4">
-          <h2 className="text-sm font-semibold text-white">New API Key</h2>
-          <div>
-            <label className="block text-xs text-neutral-400 mb-1.5">Key name</label>
-            <input value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. Production integration"
-              className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <form onSubmit={handleCreate} style={{ background: "var(--surface2)", border: "1px solid var(--border-mint)", borderRadius: 4, padding: "20px 22px", marginBottom: 18 }}>
+          <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)", marginBottom: 16 }} className="font-orbitron">NEW API KEY</div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: "block", fontSize: 9, color: "var(--text-secondary)", marginBottom: 5 }}>Key name</label>
+            <input value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. Production integration" style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }} />
           </div>
-          <div>
-            <label className="block text-xs text-neutral-400 mb-2">Scopes</label>
-            <div className="grid grid-cols-2 gap-2">
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: "block", fontSize: 9, color: "var(--text-secondary)", marginBottom: 8 }}>Scopes</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
               {ALL_SCOPES.map(s => (
-                <label key={s.value} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-xs transition-colors ${scopes.includes(s.value) ? "border-indigo-600 bg-indigo-950/30 text-white" : "border-neutral-700 text-neutral-500 hover:border-neutral-600"}`}>
-                  <input type="checkbox" checked={scopes.includes(s.value)} onChange={() => toggleScope(s.value)} className="accent-indigo-500" />
+                <label key={s.value} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 4, cursor: "pointer", fontSize: 10, border: `1px solid ${scopes.includes(s.value) ? "var(--border-mint)" : "var(--border)"}`, background: scopes.includes(s.value) ? "rgba(0,245,196,0.06)" : "var(--surface3)", color: scopes.includes(s.value) ? "var(--mint)" : "var(--text-secondary)" }}>
+                  <input type="checkbox" checked={scopes.includes(s.value)} onChange={() => toggleScope(s.value)} style={{ accentColor: "var(--mint)" }} />
                   {s.label}
                 </label>
               ))}
             </div>
           </div>
-          <div>
-            <label className="block text-xs text-neutral-400 mb-1.5">Expires (optional)</label>
-            <input type="date" value={expires} onChange={e => setExpires(e.target.value)}
-              className="w-48 bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ display: "block", fontSize: 9, color: "var(--text-secondary)", marginBottom: 5 }}>Expires (optional)</label>
+            <input type="date" value={expires} onChange={e => setExpires(e.target.value)} style={{ ...inputStyle, width: 160 }} />
           </div>
-          <div className="flex gap-3 pt-2">
-            <button type="submit" disabled={creating || !name.trim()}
-              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
+          <div style={{ display: "flex", gap: 10 }}>
+            <button type="submit" disabled={creating || !name.trim()} style={{ background: "var(--mint)", color: "var(--obsidian)", border: "none", borderRadius: 4, padding: "8px 18px", fontSize: 11, fontWeight: 600, cursor: "pointer", opacity: creating || !name.trim() ? 0.5 : 1 }}>
               {creating ? "Generating…" : "Generate key"}
             </button>
-            <button type="button" onClick={() => setShowForm(false)}
-              className="text-sm text-neutral-400 hover:text-white px-4 py-2 rounded-lg hover:bg-neutral-800 transition-colors">
-              Cancel
-            </button>
+            <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: "var(--text-secondary)", fontSize: 11, cursor: "pointer" }}>Cancel</button>
           </div>
         </form>
       )}
 
-      {/* Active keys */}
       {loading ? (
-        <div className="text-neutral-500 text-sm">Loading…</div>
+        <div style={{ fontSize: 11, color: "var(--text-dim)" }}>Loading…</div>
       ) : active.length === 0 && !showForm ? (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-8 text-center mb-4">
-          <p className="text-neutral-400 text-sm">No active API keys.</p>
-          <p className="text-neutral-600 text-xs mt-1">Generate a key to access the Ravro API programmatically.</p>
+        <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "32px 20px", textAlign: "center", marginBottom: 14 }}>
+          <p style={{ fontSize: 11, color: "var(--text-secondary)" }}>No active API keys.</p>
+          <p style={{ fontSize: 10, color: "var(--text-dim)", marginTop: 4 }}>Generate a key to access the Ravro API programmatically.</p>
         </div>
       ) : (
-        <div className="space-y-3 mb-6">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>
           {active.map(k => (
-            <div key={k.id} className="bg-neutral-900 border border-neutral-800 rounded-xl px-5 py-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-white mb-1">{k.name}</p>
-                  <code className="text-xs text-neutral-500">{k.key_prefix}••••••••••••••••</code>
-                  <div className="flex gap-2 mt-2 flex-wrap">
+            <div key={k.id} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "14px 18px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", margin: 0, marginBottom: 4 }}>{k.name}</p>
+                  <code style={{ fontSize: 10, color: "var(--text-dim)", fontFamily: "monospace" }}>{k.key_prefix}••••••••••••••••</code>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
                     {k.scopes.map(s => (
-                      <span key={s} className="text-xs bg-indigo-950 text-indigo-400 border border-indigo-900 px-1.5 py-0.5 rounded">{s}</span>
+                      <span key={s} style={{ fontSize: 8, padding: "1px 6px", borderRadius: 2, background: "rgba(0,245,196,0.08)", color: "var(--mint)", border: "1px solid var(--border-mint)" }}>{s}</span>
                     ))}
                   </div>
-                  <div className="flex gap-4 mt-2 text-xs text-neutral-600">
+                  <div style={{ display: "flex", gap: 14, marginTop: 6, fontSize: 9, color: "var(--text-dim)" }}>
                     <span>Created: {new Date(k.created_at).toLocaleDateString()}</span>
                     {k.last_used_at && <span>Last used: {new Date(k.last_used_at).toLocaleDateString()}</span>}
-                    {k.expires_at && <span className="text-yellow-600">Expires: {new Date(k.expires_at).toLocaleDateString()}</span>}
+                    {k.expires_at && <span style={{ color: "var(--amber)" }}>Expires: {new Date(k.expires_at).toLocaleDateString()}</span>}
                   </div>
                 </div>
-                <button onClick={() => handleRevoke(k.id)} disabled={revoking === k.id}
-                  className="shrink-0 ml-4 text-xs px-3 py-1.5 rounded-md bg-red-950 text-red-400 hover:bg-red-900 disabled:opacity-40 transition-colors">
+                <button onClick={() => handleRevoke(k.id)} disabled={revoking === k.id} style={{ flexShrink: 0, marginLeft: 14, fontSize: 10, padding: "5px 10px", borderRadius: 4, background: "rgba(255,75,110,0.08)", color: "var(--red)", border: "1px solid rgba(255,75,110,0.25)", cursor: "pointer", opacity: revoking === k.id ? 0.5 : 1 }}>
                   {revoking === k.id ? "…" : "Revoke"}
                 </button>
               </div>
@@ -174,18 +162,17 @@ export default function ApiKeysPage() {
         </div>
       )}
 
-      {/* Revoked keys */}
       {revoked.length > 0 && (
         <div>
-          <p className="text-xs text-neutral-600 mb-2">Revoked keys ({revoked.length})</p>
-          <div className="space-y-2">
+          <p style={{ fontSize: 9, color: "var(--text-dim)", marginBottom: 8, letterSpacing: 0.3 }}>Revoked keys ({revoked.length})</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {revoked.map(k => (
-              <div key={k.id} className="bg-neutral-900/50 border border-neutral-800/50 rounded-xl px-5 py-3 flex items-center justify-between opacity-50">
+              <div key={k.id} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", opacity: 0.45 }}>
                 <div>
-                  <p className="text-sm text-neutral-500 line-through">{k.name}</p>
-                  <code className="text-xs text-neutral-600">{k.key_prefix}••••••••••••••••</code>
+                  <p style={{ fontSize: 11, color: "var(--text-dim)", textDecoration: "line-through", margin: 0 }}>{k.name}</p>
+                  <code style={{ fontSize: 9, color: "var(--text-dim)", fontFamily: "monospace" }}>{k.key_prefix}••••••••••••••••</code>
                 </div>
-                <span className="text-xs text-neutral-600">Revoked</span>
+                <span style={{ fontSize: 9, color: "var(--text-dim)" }}>Revoked</span>
               </div>
             ))}
           </div>

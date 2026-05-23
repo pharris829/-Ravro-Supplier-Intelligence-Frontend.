@@ -1,4 +1,33 @@
-# Ravro-Frontend
-The merchant, supplier, and admin UI for Ravro — a problem-first commerce ecosystem that surfaces high-opportunity products through demand scoring, market saturation analysis, and supplier intelligence.
+# Ravro Supplier Intelligence Frontend
 
-Built with Next.js 14, TypeScript, Tailwind CSS, and Zustand. Dark mode, purple accent design system throughout.
+This repository contains the frontend for the Ravro Supplier Intelligence Layer.
+It provides dashboards and visualizations for supplier insights, product opportunity,
+feature gaps, catalog quality, and more.
+
+## 📂 Structure
+
+See the `/src` directory for the full file layout.
+
+## 🛠️ Setup
+
+Install dependencies:
+```bash
+npm install
+```
+
+Run development server:
+```bash
+npm run dev
+```
+
+Build for production:
+```bash
+npm run build
+```
+
+## 🔧 Environment Variables
+
+Copy `env.local.example` to `.env.local` and configure:
+```
+NEXT_PUBLIC_API_URL=
+```

@@ -650,3 +650,100 @@ export interface Pagination {
   total: number;
   pages: number;
 }
+
+// ─── Map ──────────────────────────────────────────────────────────────────────
+export interface MapRegion {
+  country_code: string;
+  supplier_count: number;
+  avg_trust_score: number;
+  avg_reliability_score: number;
+  product_count: number;
+  avg_demand_score: number;
+  avg_match_score: number;
+  avg_profitability_score: number;
+}
+
+export interface MapSupplier {
+  id: string;
+  name: string;
+  email?: string;
+  website?: string;
+  country: string;
+  categories: string[];
+  trust_score: number;
+  reliability_score: number;
+  product_count: number;
+  avg_demand_score: number;
+  avg_match_score: number;
+  avg_profitability_score: number;
+  created_at: string;
+}
+
+export interface MapRegionDetail {
+  country_code: string;
+  suppliers: MapSupplier[];
+  summary: {
+    avg_trust_score: number;
+    avg_reliability_score: number;
+    supplier_count: number;
+    product_count: number;
+  };
+}
+
+export async function getMapRegions(): Promise<{ regions: MapRegion[] }> {
+  return request('/map/regions');
+}
+
+export async function getMapRegionDetail(countryCode: string): Promise<MapRegionDetail> {
+  return request(`/map/regions/${countryCode}`);
+}
+
+// ─── Shopify ──────────────────────────────────────────────────────────────────
+export interface ShopifyStore {
+  id: string;
+  shop: string;
+  scope: string;
+  installed_at: string;
+  updated_at: string;
+}
+
+export interface ShopifySyncResult {
+  ok: boolean;
+  synced: number;
+  failed: number;
+  skipped: number;
+  total: number;
+  message?: string;
+  errors?: { sku?: string; name: string; error: string }[];
+}
+
+export async function getShopifyStores(): Promise<{ stores: ShopifyStore[] }> {
+  return request('/shopify/stores');
+}
+
+export async function startShopifyInstall(shop: string): Promise<{ auth_url: string }> {
+  return request(`/shopify/install?shop=${encodeURIComponent(shop)}`);
+}
+
+export async function syncShopifyStore(shop: string): Promise<ShopifySyncResult> {
+  return request(`/shopify/sync/${encodeURIComponent(shop)}`, { method: 'POST' });
+}
+
+export async function disconnectShopifyStore(shop: string): Promise<{ ok: boolean }> {
+  return request(`/shopify/stores/${encodeURIComponent(shop)}`, { method: 'DELETE' });
+}
+
+// ─── Feature flags ────────────────────────────────────────────────────────────
+export async function getAdminFlags(): Promise<{ flags: { key: string; enabled: boolean; updated_at: string }[] }> {
+  return request('/admin/flags');
+}
+
+export async function updateAdminFlag(key: string, enabled: boolean): Promise<{ flag: { key: string; enabled: boolean } }> {
+  return request(`/admin/flags/${key}`, { method: 'PATCH', body: JSON.stringify({ enabled }) });
+}
+export async function resetAdminFlags(): Promise<{ ok: boolean; message: string }> {
+  return request('/admin/flags/reset', { method: 'POST' });
+}
+export async function resetRateLimits(): Promise<{ ok: boolean; message: string }> {
+  return request('/admin/rate-limit/reset', { method: 'POST' });
+}

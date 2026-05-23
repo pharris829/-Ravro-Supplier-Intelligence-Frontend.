@@ -5,17 +5,22 @@ import { getAdminUsers, patchAdminUser, deleteAdminUser, type AdminUser } from "
 import { getCurrentUser } from "@/lib/auth";
 
 const ROLES = ["merchant", "supplier", "admin"];
-const ROLE_STYLES: Record<string, string> = {
-  admin:    "bg-red-950 text-red-400 border-red-900",
-  supplier: "bg-indigo-950 text-indigo-400 border-indigo-900",
-  merchant: "bg-neutral-800 text-neutral-400 border-neutral-700",
-};
+
+function roleBadgeStyle(role: string): React.CSSProperties {
+  const map: Record<string, { bg: string; color: string; border: string }> = {
+    admin:    { bg: "rgba(255,75,110,0.08)",  color: "var(--red)",  border: "rgba(255,75,110,0.25)"  },
+    supplier: { bg: "rgba(77,159,255,0.08)",  color: "var(--blue)", border: "rgba(77,159,255,0.25)"  },
+    merchant: { bg: "var(--surface3)",        color: "var(--text-secondary)", border: "var(--border)" },
+  };
+  const c = map[role] ?? map.merchant;
+  return { fontSize: 8, padding: "2px 7px", borderRadius: 2, background: c.bg, color: c.color, border: `1px solid ${c.border}`, letterSpacing: 0.5, textTransform: "capitalize" };
+}
 
 export default function AdminUsersPage() {
-  const [users,    setUsers]   = useState<AdminUser[]>([]);
-  const [loading,  setLoading] = useState(true);
-  const [query,    setQuery]   = useState("");
-  const [saving,   setSaving]  = useState<string | null>(null);
+  const [users,    setUsers]    = useState<AdminUser[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [query,    setQuery]    = useState("");
+  const [saving,   setSaving]   = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const me = getCurrentUser();
 
@@ -25,19 +30,15 @@ export default function AdminUsersPage() {
 
   async function changeRole(id: string, role: string) {
     setSaving(id);
-    try {
-      const r = await patchAdminUser(id, role);
-      setUsers(prev => prev.map(u => u.id === id ? r.user : u));
-    } catch { /* ignore */ } finally { setSaving(null); }
+    try { const r = await patchAdminUser(id, role); setUsers(prev => prev.map(u => u.id === id ? r.user : u)); }
+    catch { /* ignore */ } finally { setSaving(null); }
   }
 
   async function removeUser(id: string, email: string) {
     if (!confirm(`Delete user ${email}? This cannot be undone.`)) return;
     setDeleting(id);
-    try {
-      await deleteAdminUser(id);
-      setUsers(prev => prev.filter(u => u.id !== id));
-    } catch { /* ignore */ } finally { setDeleting(null); }
+    try { await deleteAdminUser(id); setUsers(prev => prev.filter(u => u.id !== id)); }
+    catch { /* ignore */ } finally { setDeleting(null); }
   }
 
   const filtered = users.filter(u =>
@@ -45,61 +46,58 @@ export default function AdminUsersPage() {
   );
 
   return (
-    <div className="max-w-5xl">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ maxWidth: 860 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
         <div>
-          <h1 className="text-2xl font-semibold text-white">User Management</h1>
-          <p className="text-sm text-neutral-400 mt-1">{users.length} total users</p>
+          <div style={{ fontSize: 7, letterSpacing: 2.5, color: "var(--text-dim)", marginBottom: 4 }} className="font-orbitron">ADMIN</div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>User Management</h1>
+          <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>{users.length} total users</p>
         </div>
       </div>
 
-      {/* Role summary */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 18 }}>
         {ROLES.map(role => (
-          <div key={role} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-            <p className="text-xs text-neutral-500 mb-1 capitalize">{role}s</p>
-            <p className="text-2xl font-semibold text-white">{users.filter(u => u.role === role).length}</p>
+          <div key={role} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "14px 16px" }}>
+            <p style={{ fontSize: 9, color: "var(--text-dim)", marginBottom: 5, textTransform: "capitalize" }}>{role}s</p>
+            <p style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1 }}>{users.filter(u => u.role === role).length}</p>
           </div>
         ))}
       </div>
 
-      <input type="text" placeholder="Search by email or name…" value={query}
-        onChange={e => setQuery(e.target.value)}
-        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-red-600 mb-5" />
+      <input type="text" placeholder="Search by email or name…" value={query} onChange={e => setQuery(e.target.value)}
+        style={{ width: "100%", background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "8px 12px", fontSize: 11, color: "var(--text-primary)", outline: "none", marginBottom: 14, boxSizing: "border-box" }}
+      />
 
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr className="border-b border-neutral-800">
-              {["User", "Role", "Joined", ""].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-medium text-neutral-500">{h}</th>
+            <tr style={{ borderBottom: "1px solid var(--border)" }}>
+              {["User","Role","Joined",""].map(h => (
+                <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: 8, letterSpacing: 1, color: "var(--text-dim)", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} className="px-4 py-8 text-center text-neutral-500 text-sm">Loading…</td></tr>
+              <tr><td colSpan={4} style={{ padding: "28px", textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>Loading…</td></tr>
             ) : filtered.map(u => (
-              <tr key={u.id} className="border-b border-neutral-800/50 hover:bg-neutral-800/20 transition-colors">
-                <td className="px-4 py-3">
-                  <p className="text-sm text-white font-medium">{u.name || "—"}</p>
-                  <p className="text-xs text-neutral-500">{u.email}</p>
+              <tr key={u.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                <td style={{ padding: "10px 16px" }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>{u.name || "—"}</p>
+                  <p style={{ fontSize: 9, color: "var(--text-secondary)", margin: 0 }}>{u.email}</p>
                 </td>
-                <td className="px-4 py-3">
-                  <select
-                    value={u.role}
-                    disabled={saving === u.id || u.id === me?.id}
+                <td style={{ padding: "10px 16px" }}>
+                  <select value={u.role} disabled={saving === u.id || u.id === me?.id}
                     onChange={e => changeRole(u.id, e.target.value)}
-                    className={`text-xs px-2 py-1 rounded border bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-red-600 disabled:opacity-50 ${ROLE_STYLES[u.role] ?? "text-neutral-400"}`}
-                  >
+                    style={{ ...roleBadgeStyle(u.role), cursor: "pointer", outline: "none", paddingRight: 8 }}>
                     {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </td>
-                <td className="px-4 py-3 text-neutral-500 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
-                <td className="px-4 py-3">
+                <td style={{ padding: "10px 16px", fontSize: 10, color: "var(--text-dim)" }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                <td style={{ padding: "10px 16px" }}>
                   {u.id !== me?.id && (
                     <button onClick={() => removeUser(u.id, u.email)} disabled={deleting === u.id}
-                      className="text-xs px-3 py-1 rounded-md bg-red-950 text-red-400 hover:bg-red-900 disabled:opacity-40 transition-colors">
+                      style={{ fontSize: 10, padding: "4px 10px", borderRadius: 4, background: "rgba(255,75,110,0.08)", color: "var(--red)", border: "1px solid rgba(255,75,110,0.25)", cursor: "pointer", opacity: deleting === u.id ? 0.5 : 1 }}>
                       {deleting === u.id ? "…" : "Delete"}
                     </button>
                   )}

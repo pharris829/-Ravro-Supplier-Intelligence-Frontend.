@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { getMySupplierProfile, getSupplierProducts, type Product, type Supplier } from "@/lib/api";
 
-interface MetricCard { label: string; value: string | number; sub?: string; color?: string; }
+const mockActivity = [
+  { merchant: "TechHub Direct",    views: 58, added: 3, store: "Shopify"      },
+  { merchant: "Urban Outpost LLC", views: 41, added: 1, store: "WooCommerce"  },
+  { merchant: "Green Goods Co.",   views: 43, added: 0, store: "Shopify"      },
+];
 
 export default function SupplierAnalyticsPage() {
   const [profile,  setProfile]  = useState<Supplier | null>(null);
@@ -17,8 +21,8 @@ export default function SupplierAnalyticsPage() {
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const avgScore   = products.length ? products.reduce((s, p) => s + (p.match_score ?? 0), 0) / products.length : 0;
-  const avgDemand  = products.length ? products.reduce((s, p) => s + (p.demand_score ?? 0), 0) / products.length : 0;
+  const avgScore  = products.length ? products.reduce((s, p) => s + (p.match_score ?? 0), 0) / products.length : 0;
+  const avgDemand = products.length ? products.reduce((s, p) => s + (p.demand_score ?? 0), 0) / products.length : 0;
   const topProducts = [...products].sort((a, b) => (b.match_score ?? 0) - (a.match_score ?? 0)).slice(0, 5);
   const lowStock    = products.filter(p => (p.stock_quantity ?? 0) < 20);
   const byCategory  = products.reduce<Record<string, number>>((acc, p) => {
@@ -27,158 +31,138 @@ export default function SupplierAnalyticsPage() {
     return acc;
   }, {});
 
-  const metrics: MetricCard[] = [
-    { label: "Avg Opportunity Score", value: avgScore.toFixed(2),   color: avgScore >= 0.6 ? "text-emerald-400" : "text-yellow-400" },
-    { label: "Avg Demand Score",      value: avgDemand.toFixed(2),  color: avgDemand >= 0.6 ? "text-emerald-400" : "text-yellow-400" },
-    { label: "Trust Score",           value: profile?.trust_score?.toFixed(1) ?? "—", color: "text-white" },
-    { label: "Reliability Score",     value: profile?.reliability_score?.toFixed(1) ?? "—", color: "text-white" },
-    { label: "Total Products",        value: products.length },
-    { label: "Low Stock Alerts",      value: lowStock.length, color: lowStock.length > 0 ? "text-red-400" : "text-emerald-400" },
-    { label: "Active Merchants",      value: 3,  sub: "mock" },
-    { label: "Catalog Views (30d)",   value: 142, sub: "mock" },
-  ];
-
   const tierCounts = {
     high:   products.filter(p => (p.match_score ?? 0) >= 0.75).length,
     medium: products.filter(p => { const s = p.match_score ?? 0; return s >= 0.45 && s < 0.75; }).length,
     low:    products.filter(p => (p.match_score ?? 0) < 0.45).length,
   };
 
-  const mockMerchantActivity = [
-    { merchant: "TechHub Direct",   views: 58, added: 3,  store: "Shopify"     },
-    { merchant: "Urban Outpost LLC", views: 41, added: 1,  store: "WooCommerce" },
-    { merchant: "Green Goods Co.",  views: 43, added: 0,  store: "Shopify"     },
+  const statCards = [
+    { label: "Avg Opportunity Score", value: avgScore.toFixed(2),  color: avgScore >= 0.6 ? "var(--mint)" : "var(--amber)" },
+    { label: "Avg Demand Score",      value: avgDemand.toFixed(2), color: avgDemand >= 0.6 ? "var(--mint)" : "var(--amber)" },
+    { label: "Trust Score",           value: profile?.trust_score?.toFixed(1) ?? "—",         color: "var(--text-primary)" },
+    { label: "Reliability Score",     value: profile?.reliability_score?.toFixed(1) ?? "—",   color: "var(--text-primary)" },
+    { label: "Total Products",        value: products.length,  color: "var(--text-primary)" },
+    { label: "Low Stock Alerts",      value: lowStock.length,  color: lowStock.length > 0 ? "var(--red)" : "var(--mint)" },
+    { label: "Active Merchants",      value: 3,   color: "var(--text-primary)" },
+    { label: "Catalog Views (30d)",   value: 142, color: "var(--text-primary)" },
   ];
 
-  if (loading) return <div className="text-neutral-500 text-sm">Loading…</div>;
+  if (loading) return <div style={{ fontSize: 11, color: "var(--text-dim)", padding: 16 }}>Loading…</div>;
 
   return (
-    <div className="max-w-5xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-white">Analytics</h1>
-        <p className="text-sm text-neutral-400 mt-1">Product performance and merchant activity for {profile?.name}</p>
+    <div style={{ maxWidth: 900 }}>
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ fontSize: 7, letterSpacing: 2.5, color: "var(--text-dim)", marginBottom: 4 }} className="font-orbitron">SUPPLIER</div>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Analytics</h1>
+        <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>Product performance and merchant activity for {profile?.name}</p>
       </div>
 
-      {/* Metric grid */}
-      <div className="grid grid-cols-4 gap-3 mb-8">
-        {metrics.map(({ label, value, sub, color }) => (
-          <div key={label} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-            <p className="text-xs text-neutral-500 mb-1">{label}</p>
-            <p className={`text-2xl font-semibold ${color ?? "text-white"}`}>{value}</p>
-            {sub && <p className="text-xs text-neutral-600 mt-0.5">{sub}</p>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
+        {statCards.map(({ label, value, color }) => (
+          <div key={label} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "14px 16px" }}>
+            <p style={{ fontSize: 9, color: "var(--text-dim)", marginBottom: 5 }}>{label}</p>
+            <p style={{ fontSize: 20, fontWeight: 700, color, lineHeight: 1 }}>{value}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-5 mb-6">
-        {/* Opportunity tier breakdown */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-4">Opportunity Breakdown</h2>
-          <div className="space-y-3">
-            {[
-              { label: "High (≥0.75)",    value: tierCounts.high,   color: "bg-emerald-500", text: "text-emerald-400" },
-              { label: "Medium (0.45–0.75)", value: tierCounts.medium, color: "bg-yellow-500", text: "text-yellow-400"  },
-              { label: "Low (<0.45)",     value: tierCounts.low,    color: "bg-red-500",     text: "text-red-400"     },
-            ].map(({ label, value, color, text }) => {
-              const pct = products.length ? Math.round((value / products.length) * 100) : 0;
-              return (
-                <div key={label}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-neutral-400">{label}</span>
-                    <span className={text}>{value} products ({pct}%)</span>
-                  </div>
-                  <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
-                    <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
-                  </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+        {/* Tier breakdown */}
+        <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "16px 18px" }}>
+          <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)", marginBottom: 12 }} className="font-orbitron">OPPORTUNITY BREAKDOWN</div>
+          {[
+            { label: "High (≥0.75)",      value: tierCounts.high,   color: "var(--mint)"  },
+            { label: "Medium (0.45–0.75)", value: tierCounts.medium, color: "var(--amber)" },
+            { label: "Low (<0.45)",        value: tierCounts.low,    color: "var(--red)"   },
+          ].map(({ label, value, color }) => {
+            const pct = products.length ? Math.round((value / products.length) * 100) : 0;
+            return (
+              <div key={label} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>{label}</span>
+                  <span style={{ fontSize: 10, color }}>{value} ({pct}%)</span>
                 </div>
-              );
-            })}
-          </div>
+                <div style={{ height: 3, background: "var(--surface3)", borderRadius: 2 }}>
+                  <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 2 }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Products by category */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-4">Products by Category</h2>
-          <div className="space-y-2">
-            {Object.entries(byCategory).sort(([,a],[,b]) => b - a).map(([cat, count]) => {
-              const pct = products.length ? Math.round((count / products.length) * 100) : 0;
-              return (
-                <div key={cat}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-neutral-400">{cat}</span>
-                    <span className="text-neutral-300">{count}</span>
-                  </div>
-                  <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${pct}%` }} />
-                  </div>
+        {/* By category */}
+        <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "16px 18px" }}>
+          <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)", marginBottom: 12 }} className="font-orbitron">BY CATEGORY</div>
+          {Object.entries(byCategory).sort(([,a],[,b]) => b - a).map(([cat, count]) => {
+            const pct = products.length ? Math.round((count / products.length) * 100) : 0;
+            return (
+              <div key={cat} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>{cat}</span>
+                  <span style={{ fontSize: 10, color: "var(--text-primary)" }}>{count}</span>
                 </div>
-              );
-            })}
-            {Object.keys(byCategory).length === 0 && (
-              <p className="text-neutral-500 text-xs">No products yet</p>
-            )}
-          </div>
+                <div style={{ height: 3, background: "var(--surface3)", borderRadius: 2 }}>
+                  <div style={{ height: "100%", width: `${pct}%`, background: "var(--mint)", borderRadius: 2 }} />
+                </div>
+              </div>
+            );
+          })}
+          {Object.keys(byCategory).length === 0 && <p style={{ fontSize: 10, color: "var(--text-dim)" }}>No products yet</p>}
         </div>
       </div>
 
       {/* Top products */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden mb-6">
-        <div className="px-5 py-4 border-b border-neutral-800">
-          <h2 className="text-sm font-semibold text-white">Top Performing Products</h2>
-        </div>
-        <table className="w-full text-sm">
+      <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, overflow: "hidden", marginBottom: 12 }}>
+        <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", fontSize: 7, letterSpacing: 2, color: "var(--text-dim)" }} className="font-orbitron">TOP PERFORMING PRODUCTS</div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr className="border-b border-neutral-800">
-              {["Product", "Category", "Opportunity", "Demand", "Stock"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-medium text-neutral-500">{h}</th>
+            <tr style={{ borderBottom: "1px solid var(--border)" }}>
+              {["Product","Category","Opportunity","Demand","Stock"].map(h => (
+                <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: 8, letterSpacing: 1, color: "var(--text-dim)", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {topProducts.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-neutral-500 text-sm">No products</td></tr>
-            ) : topProducts.map(p => (
-              <tr key={p.id} className="border-b border-neutral-800/50">
-                <td className="px-4 py-3 text-white text-sm font-medium">{p.product_name}</td>
-                <td className="px-4 py-3 text-neutral-400 text-xs">{p.category || "—"}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-sm font-semibold tabular-nums ${(p.match_score ?? 0) >= 0.75 ? "text-emerald-400" : (p.match_score ?? 0) >= 0.45 ? "text-yellow-400" : "text-red-400"}`}>
-                    {p.match_score?.toFixed(2) ?? "—"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-neutral-400 text-xs tabular-nums">{p.demand_score?.toFixed(2) ?? "—"}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-sm ${(p.stock_quantity ?? 0) < 20 ? "text-red-400" : "text-neutral-300"}`}>
-                    {p.stock_quantity ?? 0}
-                  </span>
-                </td>
-              </tr>
-            ))}
+              <tr><td colSpan={5} style={{ padding: "20px", textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>No products</td></tr>
+            ) : topProducts.map(p => {
+              const scoreColor = (p.match_score ?? 0) >= 0.75 ? "var(--mint)" : (p.match_score ?? 0) >= 0.45 ? "var(--amber)" : "var(--red)";
+              return (
+                <tr key={p.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                  <td style={{ padding: "10px 16px", fontSize: 11, fontWeight: 600, color: "var(--text-primary)" }}>{p.product_name}</td>
+                  <td style={{ padding: "10px 16px", fontSize: 10, color: "var(--text-secondary)" }}>{p.category || "—"}</td>
+                  <td style={{ padding: "10px 16px", fontSize: 12, fontWeight: 700, color: scoreColor }}>{p.match_score?.toFixed(2) ?? "—"}</td>
+                  <td style={{ padding: "10px 16px", fontSize: 10, color: "var(--text-secondary)" }}>{p.demand_score?.toFixed(2) ?? "—"}</td>
+                  <td style={{ padding: "10px 16px", fontSize: 11, color: (p.stock_quantity ?? 0) < 20 ? "var(--red)" : "var(--text-secondary)" }}>{p.stock_quantity ?? 0}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
       {/* Merchant activity */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-neutral-800 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white">Merchant Activity</h2>
-          <span className="text-xs text-neutral-600 bg-neutral-800 px-2 py-0.5 rounded">Sample data</span>
+      <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)" }} className="font-orbitron">MERCHANT ACTIVITY</div>
+          <span style={{ fontSize: 8, padding: "2px 7px", borderRadius: 2, background: "var(--surface3)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>Sample data</span>
         </div>
-        <table className="w-full text-sm">
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr className="border-b border-neutral-800">
-              {["Merchant", "Store", "Product Views", "Products Added"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-medium text-neutral-500">{h}</th>
+            <tr style={{ borderBottom: "1px solid var(--border)" }}>
+              {["Merchant","Store","Product Views","Products Added"].map(h => (
+                <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: 8, letterSpacing: 1, color: "var(--text-dim)", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {mockMerchantActivity.map((m, i) => (
-              <tr key={i} className="border-b border-neutral-800/50">
-                <td className="px-4 py-3 text-white text-sm">{m.merchant}</td>
-                <td className="px-4 py-3 text-neutral-400 text-xs">{m.store}</td>
-                <td className="px-4 py-3 text-neutral-300 text-sm tabular-nums">{m.views}</td>
-                <td className="px-4 py-3 text-neutral-300 text-sm tabular-nums">{m.added}</td>
+            {mockActivity.map((m, i) => (
+              <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                <td style={{ padding: "10px 16px", fontSize: 11, fontWeight: 600, color: "var(--text-primary)" }}>{m.merchant}</td>
+                <td style={{ padding: "10px 16px", fontSize: 10, color: "var(--text-secondary)" }}>{m.store}</td>
+                <td style={{ padding: "10px 16px", fontSize: 11, color: "var(--text-primary)" }}>{m.views}</td>
+                <td style={{ padding: "10px 16px", fontSize: 11, color: "var(--text-primary)" }}>{m.added}</td>
               </tr>
             ))}
           </tbody>

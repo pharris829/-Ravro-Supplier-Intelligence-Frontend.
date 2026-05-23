@@ -7,8 +7,8 @@ import { getCurrentUser } from "@/lib/auth";
 
 export default function SettingsPage() {
   const user = getCurrentUser();
-  const [perms,   setPerms]   = useState<{ resource: string; action: string }[]>([]);
-  const [keyCount, setKeyCount] = useState<number | null>(null);
+  const [perms,     setPerms]     = useState<{ resource: string; action: string }[]>([]);
+  const [keyCount,  setKeyCount]  = useState<number | null>(null);
   const [sessCount, setSessCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -18,9 +18,9 @@ export default function SettingsPage() {
   }, []);
 
   const sections = [
-    { href: "/settings/api-keys", title: "API Keys",        desc: "Generate keys for programmatic access to the Ravro API.", stat: keyCount != null ? `${keyCount} active key${keyCount !== 1 ? "s" : ""}` : null },
-    { href: "/settings/oauth",    title: "OAuth Apps",       desc: "Register OAuth applications that can request access to your account.", stat: null },
-    { href: "/settings/sessions", title: "Active Sessions",  desc: "View and revoke your current login sessions.", stat: sessCount != null ? `${sessCount} session${sessCount !== 1 ? "s" : ""}` : null },
+    { href: "/settings/api-keys", title: "API Keys",       desc: "Generate keys for programmatic access to the Ravro API.", stat: keyCount != null ? `${keyCount} active key${keyCount !== 1 ? "s" : ""}` : null },
+    { href: "/settings/oauth",    title: "OAuth Apps",      desc: "Register OAuth applications that can request access to your account.",     stat: null },
+    { href: "/settings/sessions", title: "Active Sessions", desc: "View and revoke your current login sessions.", stat: sessCount != null ? `${sessCount} session${sessCount !== 1 ? "s" : ""}` : null },
   ];
 
   const grouped = perms.reduce<Record<string, string[]>>((acc, p) => {
@@ -29,51 +29,56 @@ export default function SettingsPage() {
   }, {});
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-white">Settings</h1>
-        <p className="text-sm text-neutral-400 mt-1">Account security, API access, and permissions</p>
+    <div style={{ maxWidth: 680 }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 7, letterSpacing: 2.5, color: "var(--text-dim)", marginBottom: 4 }} className="font-orbitron">ACCOUNT</div>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Settings</h1>
+        <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>Account security, API access, and permissions</p>
       </div>
 
-      {/* Profile card */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 mb-8 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-indigo-700 flex items-center justify-center text-white font-bold text-sm">
+      {/* Profile */}
+      <div style={{ background: "var(--surface2)", border: "1px solid var(--border-mint)", borderRadius: 4, padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14, boxShadow: "0 0 16px rgba(0,245,196,0.05)" }}>
+        <div suppressHydrationWarning style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,245,196,0.15)", border: "1px solid var(--border-mint)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "var(--mint)", flexShrink: 0 }}>
           {user?.email?.charAt(0).toUpperCase()}
         </div>
-        <div>
-          <p className="text-sm font-semibold text-white">{user?.email}</p>
-          <p className="text-xs text-neutral-500 mt-0.5 capitalize">{user?.role} account</p>
+        <div suppressHydrationWarning>
+          <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>{user?.email}</p>
+          <p style={{ fontSize: 9, color: "var(--text-dim)", margin: "3px 0 0", textTransform: "capitalize" }}>{user?.role} account</p>
         </div>
       </div>
 
-      {/* Section cards */}
-      <div className="grid grid-cols-1 gap-4 mb-8">
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 22 }}>
         {sections.map(s => (
-          <Link key={s.href} href={s.href}
-            className="bg-neutral-900 border border-neutral-800 hover:border-indigo-600 rounded-xl p-5 flex items-center justify-between transition-colors group">
+          <Link key={s.href} href={s.href} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4,
+            padding: "14px 18px", textDecoration: "none", transition: "border-color 0.15s",
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-mint)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
+          >
             <div>
-              <h2 className="text-sm font-semibold text-white group-hover:text-indigo-400 mb-0.5">{s.title}</h2>
-              <p className="text-xs text-neutral-500">{s.desc}</p>
+              <h2 style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", margin: 0, marginBottom: 3 }}>{s.title}</h2>
+              <p style={{ fontSize: 10, color: "var(--text-dim)", margin: 0 }}>{s.desc}</p>
             </div>
-            <div className="text-right shrink-0 ml-4">
-              {s.stat && <p className="text-xs text-neutral-400">{s.stat}</p>}
-              <p className="text-xs text-indigo-500 group-hover:text-indigo-400 mt-0.5">Manage →</p>
+            <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 16 }}>
+              {s.stat && <p style={{ fontSize: 10, color: "var(--text-secondary)", margin: 0 }}>{s.stat}</p>}
+              <p style={{ fontSize: 10, color: "var(--mint)", margin: "3px 0 0" }}>Manage →</p>
             </div>
           </Link>
         ))}
       </div>
 
-      {/* Permissions summary */}
       {perms.length > 0 && (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-4">Your Permissions</h2>
-          <div className="grid grid-cols-2 gap-2">
+        <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "16px 18px" }}>
+          <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)", marginBottom: 12 }} className="font-orbitron">YOUR PERMISSIONS</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
             {Object.entries(grouped).map(([resource, actions]) => (
-              <div key={resource} className="flex items-center justify-between bg-neutral-800 rounded-lg px-3 py-2">
-                <span className="text-xs text-neutral-400 capitalize">{resource}</span>
-                <div className="flex gap-1">
+              <div key={resource} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface3)", borderRadius: 4, padding: "7px 10px", border: "1px solid var(--border)" }}>
+                <span style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "capitalize" }}>{resource}</span>
+                <div style={{ display: "flex", gap: 4 }}>
                   {actions.map(a => (
-                    <span key={a} className="text-xs px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-400 border border-indigo-900 capitalize">{a}</span>
+                    <span key={a} style={{ fontSize: 8, padding: "1px 5px", borderRadius: 2, background: "rgba(0,245,196,0.08)", color: "var(--mint)", border: "1px solid var(--border-mint)", textTransform: "capitalize" }}>{a}</span>
                   ))}
                 </div>
               </div>

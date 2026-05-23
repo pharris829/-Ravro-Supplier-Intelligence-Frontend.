@@ -1,108 +1,146 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getAdminFlags, updateAdminFlag } from "@/lib/api";
+import { setFlagsCache } from "@/lib/flags";
 
-interface Flag {
-  key: string;
-  label: string;
-  description: string;
-  enabled: boolean;
-  group: string;
-}
+interface Flag { key: string; label: string; description: string; enabled: boolean; group: string; }
 
-const DEFAULTS: Flag[] = [
-  { key: "scoring_enabled",          label: "Scoring Engine",            description: "Run opportunity scoring on ingested products.",             enabled: true,  group: "Core" },
-  { key: "csv_strict_validation",    label: "Strict CSV Validation",     description: "Reject rows with missing optional fields.",                 enabled: false, group: "Core" },
-  { key: "opportunity_tier_badges",  label: "Opportunity Tier Badges",   description: "Show high/medium/low tier badges in the product UI.",       enabled: true,  group: "UI"   },
-  { key: "merchant_access_requests", label: "Merchant Access Requests",  description: "Allow merchants to request catalog access from suppliers.", enabled: true,  group: "UI"   },
-  { key: "supplier_analytics",       label: "Supplier Analytics",        description: "Enable the supplier analytics dashboard.",                  enabled: true,  group: "UI"   },
-  { key: "shopify_sync",             label: "Shopify Sync",              description: "Enable Shopify integration for inventory sync.",            enabled: false, group: "Integrations" },
-  { key: "woo_sync",                 label: "WooCommerce Sync",          description: "Enable WooCommerce integration.",                           enabled: false, group: "Integrations" },
-  { key: "etsy_sync",                label: "Etsy Sync",                 description: "Enable Etsy integration.",                                 enabled: false, group: "Integrations" },
-  { key: "billing_module",           label: "Billing Module",            description: "Show billing and usage pages to merchants.",               enabled: true,  group: "Billing" },
-  { key: "paid_plans",               label: "Paid Plans",                description: "Enable upgrade flow and plan selection.",                   enabled: false, group: "Billing" },
-  { key: "rate_limiting",            label: "Rate Limiting",             description: "Apply per-IP rate limits on auth and upload routes.",       enabled: true,  group: "Security" },
-  { key: "debug_mode",               label: "Debug Mode",                description: "Log verbose errors to the console.",                       enabled: false, group: "Security" },
-];
-
-const STORAGE_KEY = "ravro_feature_flags";
-
-function loadFlags(): Flag[] {
-  try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    if (!stored) return DEFAULTS;
-    return DEFAULTS.map(d => ({ ...d, enabled: stored[d.key] ?? d.enabled }));
-  } catch { return DEFAULTS; }
-}
-
-function saveFlags(flags: Flag[]) {
-  const map = Object.fromEntries(flags.map(f => [f.key, f.enabled]));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-}
+const META: Record<string, { label: string; description: string; group: string }> = {
+  scoring_enabled:          { label: "Scoring Engine",           description: "Run opportunity scoring on ingested products.",             group: "Core"         },
+  csv_strict_validation:    { label: "Strict CSV Validation",    description: "Reject rows with missing optional fields.",                 group: "Core"         },
+  opportunity_tier_badges:  { label: "Opportunity Tier Badges",  description: "Show high/medium/low tier badges in the product UI.",       group: "UI"           },
+  merchant_access_requests: { label: "Merchant Access Requests", description: "Allow merchants to request catalog access from suppliers.", group: "UI"           },
+  supplier_analytics:       { label: "Supplier Analytics",       description: "Enable the supplier analytics dashboard.",                  group: "UI"           },
+  shopify_sync:             { label: "Shopify Sync",             description: "Enable Shopify integration for inventory sync.",            group: "Integrations" },
+  woo_sync:                 { label: "WooCommerce Sync",         description: "Enable WooCommerce integration. (Backend not yet built)",   group: "Integrations" },
+  etsy_sync:                { label: "Etsy Sync",                description: "Enable Etsy integration. (Backend not yet built)",         group: "Integrations" },
+  billing_module:           { label: "Billing Module",           description: "Show billing and usage pages to merchants.",               group: "Billing"      },
+  paid_plans:               { label: "Paid Plans",               description: "Enable upgrade flow and plan selection.",                   group: "Billing"      },
+  rate_limiting:            { label: "Rate Limiting",            description: "Apply per-IP rate limits on auth and upload routes.",       group: "Security"     },
+  debug_mode:               { label: "Debug Mode",               description: "Log verbose stack traces in server error output.",         group: "Security"     },
+};
 
 export default function AdminFlagsPage() {
-  const [flags, setFlags]   = useState<Flag[]>([]);
-  const [search, setSearch] = useState("");
+  const [flags,   setFlags]   = useState<Flag[]>([]);
+  const [search,  setSearch]  = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState("");
 
-  useEffect(() => { setFlags(loadFlags()); }, []);
+  useEffect(() => {
+    getAdminFlags()
+      .then(({ flags: raw }) => {
+        const mapped = raw.map(f => ({
+          ...f,
+          label:       META[f.key]?.label       ?? f.key,
+          description: META[f.key]?.description ?? "",
+          group:       META[f.key]?.group        ?? "Other",
+        }));
+        setFlags(mapped);
+        syncCache(mapped);
+      })
+      .catch(() => setError("Could not load flags from server."))
+      .finally(() => setLoading(false));
+  }, []);
 
-  function toggle(key: string) {
-    const updated = flags.map(f => f.key === key ? { ...f, enabled: !f.enabled } : f);
+  function syncCache(f: Flag[]) {
+    setFlagsCache(Object.fromEntries(f.map(x => [x.key, x.enabled])));
+  }
+
+  async function toggle(key: string) {
+    const flag = flags.find(f => f.key === key);
+    if (!flag) return;
+    const next = !flag.enabled;
+    const updated = flags.map(f => f.key === key ? { ...f, enabled: next } : f);
     setFlags(updated);
-    saveFlags(updated);
+    syncCache(updated);
+    try {
+      await updateAdminFlag(key, next);
+    } catch {
+      // Revert on failure
+      const reverted = flags.map(f => f.key === key ? { ...f, enabled: flag.enabled } : f);
+      setFlags(reverted);
+      syncCache(reverted);
+    }
+  }
+
+  async function setAll(enabled: boolean) {
+    const updated = flags.map(f => ({ ...f, enabled }));
+    setFlags(updated);
+    syncCache(updated);
+    await Promise.allSettled(flags.map(f => updateAdminFlag(f.key, enabled)));
   }
 
   const groups = [...new Set(flags.map(f => f.group))];
-  const filtered = flags.filter(f => !search || f.label.toLowerCase().includes(search.toLowerCase()) || f.description.toLowerCase().includes(search.toLowerCase()));
-
+  const filtered = flags.filter(f =>
+    !search || f.label.toLowerCase().includes(search.toLowerCase()) || f.description.toLowerCase().includes(search.toLowerCase())
+  );
   const enabledCount = flags.filter(f => f.enabled).length;
 
   return (
-    <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ maxWidth: 680 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
         <div>
-          <h1 className="text-2xl font-semibold text-white">Feature Flags</h1>
-          <p className="text-sm text-neutral-400 mt-1">{enabledCount} of {flags.length} enabled</p>
+          <div style={{ fontSize: 7, letterSpacing: 2.5, color: "var(--text-dim)", marginBottom: 4 }} className="font-orbitron">ADMIN</div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Feature Flags</h1>
+          <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>{enabledCount} of {flags.length} enabled</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => { const u = flags.map(f => ({ ...f, enabled: true })); setFlags(u); saveFlags(u); }}
-            className="text-xs px-3 py-1.5 rounded-md bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition-colors">Enable all</button>
-          <button onClick={() => { const u = flags.map(f => ({ ...f, enabled: false })); setFlags(u); saveFlags(u); }}
-            className="text-xs px-3 py-1.5 rounded-md bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition-colors">Disable all</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" onClick={() => setAll(true)}  style={{ fontSize: 10, padding: "5px 12px", borderRadius: 4, background: "var(--surface3)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>Enable all</button>
+          <button type="button" onClick={() => setAll(false)} style={{ fontSize: 10, padding: "5px 12px", borderRadius: 4, background: "var(--surface3)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>Disable all</button>
         </div>
       </div>
+
+      {error && <p style={{ fontSize: 11, color: "var(--red)", marginBottom: 12 }}>{error}</p>}
 
       <input type="text" placeholder="Search flags…" value={search} onChange={e => setSearch(e.target.value)}
-        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-red-600 mb-6" />
+        style={{ width: "100%", background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "7px 10px", fontSize: 11, color: "var(--text-primary)", outline: "none", marginBottom: 20, boxSizing: "border-box" }} />
 
-      <div className="space-y-6">
-        {groups.map(group => {
-          const groupFlags = filtered.filter(f => f.group === group);
-          if (groupFlags.length === 0) return null;
-          return (
-            <div key={group}>
-              <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 px-1">{group}</p>
-              <div className="bg-neutral-900 border border-neutral-800 rounded-xl divide-y divide-neutral-800">
-                {groupFlags.map(flag => (
-                  <div key={flag.key} className="flex items-center justify-between px-5 py-4">
-                    <div className="flex-1 pr-4">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-white">{flag.label}</p>
-                        <code className="text-xs text-neutral-600">{flag.key}</code>
+      {loading ? (
+        <p style={{ fontSize: 12, color: "var(--text-dim)", textAlign: "center", padding: 32 }}>Loading…</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {groups.map(group => {
+            const groupFlags = filtered.filter(f => f.group === group);
+            if (groupFlags.length === 0) return null;
+            return (
+              <div key={group}>
+                <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)", marginBottom: 8 }} className="font-orbitron">{group.toUpperCase()}</div>
+                <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4 }}>
+                  {groupFlags.map((flag, i) => (
+                    <div key={flag.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: i < groupFlags.length - 1 ? "1px solid var(--border)" : "none" }}>
+                      <div style={{ flex: 1, paddingRight: 16 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                          <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>{flag.label}</p>
+                          <code style={{ fontSize: 9, color: "var(--text-dim)" }}>{flag.key}</code>
+                        </div>
+                        <p style={{ fontSize: 10, color: "var(--text-secondary)", margin: 0 }}>{flag.description}</p>
                       </div>
-                      <p className="text-xs text-neutral-500 mt-0.5">{flag.description}</p>
+                      <button
+                        type="button"
+                        onClick={() => toggle(flag.key)}
+                        aria-label={`${flag.enabled ? "Disable" : "Enable"} ${flag.label}`}
+                        aria-pressed={flag.enabled ? "true" : "false"}
+                        style={{
+                          position: "relative", width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer", flexShrink: 0,
+                          background: flag.enabled ? "var(--mint)" : "var(--surface3)",
+                          transition: "background 0.2s",
+                        }}
+                      >
+                        <span style={{
+                          position: "absolute", top: 2, left: flag.enabled ? 18 : 2,
+                          width: 16, height: 16, borderRadius: "50%", background: flag.enabled ? "var(--obsidian)" : "var(--text-dim)",
+                          transition: "left 0.2s",
+                        }} />
+                      </button>
                     </div>
-                    <button onClick={() => toggle(flag.key)}
-                      className={`relative w-10 h-5 rounded-full transition-colors focus:outline-none ${flag.enabled ? "bg-red-600" : "bg-neutral-700"}`}>
-                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${flag.enabled ? "translate-x-5" : "translate-x-0"}`} />
-                    </button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

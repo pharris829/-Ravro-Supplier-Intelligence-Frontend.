@@ -4,21 +4,22 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getRbac, grantPermission, revokePermission } from "@/lib/api";
 
-const ROLES     = ["merchant", "supplier"] as const; // admin is immutable
+const ROLES     = ["merchant", "supplier"] as const;
 const RESOURCES = ["products","suppliers","workflows","scoring","recommendations","ingest","analytics","integrations","api_keys","users"] as const;
 const ACTIONS   = ["read", "write", "delete"] as const;
 
 type Role     = typeof ROLES[number];
 type Resource = typeof RESOURCES[number];
 type Action   = typeof ACTIONS[number];
-
-type Matrix = Record<Role, Record<Resource, Set<Action>>>;
+type Matrix   = Record<Role, Record<Resource, Set<Action>>>;
 
 function emptyMatrix(): Matrix {
   return Object.fromEntries(
-    ROLES.map(r => [r, Object.fromEntries(RESOURCES.map(res => [res, new Set<Action>()])) ])
+    ROLES.map(r => [r, Object.fromEntries(RESOURCES.map(res => [res, new Set<Action>()]))])
   ) as Matrix;
 }
+
+const roleColor = { merchant: "var(--blue)", supplier: "var(--mint)" };
 
 export default function RbacPage() {
   const [matrix,  setMatrix]  = useState<Matrix>(emptyMatrix());
@@ -42,11 +43,8 @@ export default function RbacPage() {
     setSaving(key);
     const has = matrix[role][resource].has(action);
     try {
-      if (has) {
-        await revokePermission(role, resource, action);
-      } else {
-        await grantPermission(role, resource, action);
-      }
+      if (has) await revokePermission(role, resource, action);
+      else     await grantPermission(role, resource, action);
       setMatrix(prev => {
         const next = { ...prev, [role]: { ...prev[role], [resource]: new Set(prev[role][resource]) } };
         has ? next[role][resource].delete(action) : next[role][resource].add(action);
@@ -56,66 +54,66 @@ export default function RbacPage() {
     setSaving(null);
   }
 
-  const roleColors = { merchant: "text-blue-400", supplier: "text-emerald-400" };
-
   return (
-    <div className="max-w-5xl">
-      <Link href="/admin" className="text-xs text-neutral-500 hover:text-white mb-4 inline-block">← Admin Console</Link>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-white">Role-Based Access Control</h1>
-        <p className="text-sm text-neutral-400 mt-1">Grant or revoke resource permissions per role. Admin permissions are fixed.</p>
+    <div style={{ maxWidth: 900 }}>
+      <Link href="/admin" style={{ fontSize: 10, color: "var(--text-dim)", textDecoration: "none", display: "inline-block", marginBottom: 16 }}>← Admin Console</Link>
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ fontSize: 7, letterSpacing: 2.5, color: "var(--text-dim)", marginBottom: 4 }} className="font-orbitron">ADMIN</div>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Role-Based Access Control</h1>
+        <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>Grant or revoke resource permissions per role. Admin permissions are fixed.</p>
       </div>
 
-      {/* Legend */}
-      <div className="flex gap-6 mb-6 text-xs">
+      <div style={{ display: "flex", gap: 20, marginBottom: 18, fontSize: 10 }}>
         {ROLES.map(r => (
-          <div key={r} className="flex items-center gap-1.5">
-            <div className={`w-2 h-2 rounded-full ${r === "merchant" ? "bg-blue-400" : "bg-emerald-400"}`} />
-            <span className="text-neutral-400 capitalize">{r}</span>
+          <div key={r} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: roleColor[r] }} />
+            <span style={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{r}</span>
           </div>
         ))}
-        <span className="text-neutral-600 ml-4">Click cell to toggle · Admin always has full access</span>
+        <span style={{ color: "var(--text-dim)", marginLeft: 12, fontSize: 9 }}>Click cell to toggle · Admin always has full access</span>
       </div>
 
       {loading ? (
-        <div className="text-neutral-500 text-sm">Loading…</div>
+        <div style={{ fontSize: 11, color: "var(--text-dim)" }}>Loading…</div>
       ) : (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-x-auto">
-          <table className="w-full text-xs">
+        <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, overflow: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr className="border-b border-neutral-800">
-                <th className="text-left px-4 py-3 text-neutral-500 font-medium w-32">Resource</th>
+              <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                <th style={{ textAlign: "left", padding: "10px 14px", fontSize: 8, letterSpacing: 1, color: "var(--text-dim)", fontWeight: 600, width: 120 }}>Resource</th>
                 {ROLES.flatMap(role => ACTIONS.map(action => (
-                  <th key={`${role}:${action}`} className="px-2 py-3 text-center font-medium w-16">
-                    <div className={`capitalize ${roleColors[role]}`}>{role.slice(0,4)}</div>
-                    <div className="text-neutral-600 mt-0.5 capitalize">{action}</div>
+                  <th key={`${role}:${action}`} style={{ padding: "8px 6px", textAlign: "center", width: 60 }}>
+                    <div style={{ fontSize: 8, color: roleColor[role], textTransform: "capitalize" }}>{role.slice(0,4)}</div>
+                    <div style={{ fontSize: 8, color: "var(--text-dim)", textTransform: "capitalize" }}>{action}</div>
                   </th>
                 )))}
               </tr>
             </thead>
             <tbody>
               {RESOURCES.map((resource, ri) => (
-                <tr key={resource} className={`border-b border-neutral-800/50 ${ri % 2 === 0 ? "bg-neutral-900" : "bg-neutral-900/50"}`}>
-                  <td className="px-4 py-3 font-medium text-neutral-300 capitalize">{resource}</td>
+                <tr key={resource} style={{ borderBottom: "1px solid var(--border)", background: ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                  <td style={{ padding: "10px 14px", fontSize: 10, fontWeight: 600, color: "var(--text-secondary)", textTransform: "capitalize" }}>{resource}</td>
                   {ROLES.flatMap(role => ACTIONS.map(action => {
                     const key      = `${role}:${resource}:${action}`;
                     const checked  = matrix[role][resource].has(action);
                     const isSaving = saving === key;
-                    const color    = role === "merchant" ? "bg-blue-500 border-blue-700" : "bg-emerald-500 border-emerald-700";
-
                     return (
-                      <td key={key} className="px-2 py-3 text-center">
+                      <td key={key} style={{ padding: "8px 6px", textAlign: "center" }}>
                         <button
                           onClick={() => toggle(role, resource, action)}
                           disabled={!!saving}
                           title={`${checked ? "Revoke" : "Grant"} ${role} ${action} ${resource}`}
-                          className={`w-6 h-6 rounded border transition-all disabled:opacity-50 cursor-pointer ${
-                            isSaving ? "animate-pulse bg-neutral-700 border-neutral-600" :
-                            checked  ? `${color}` :
-                            "bg-neutral-800 border-neutral-700 hover:border-neutral-500"
-                          }`}
+                          style={{
+                            width: 24, height: 24, borderRadius: 4, cursor: "pointer",
+                            border: `1px solid ${checked ? roleColor[role] + "60" : "var(--border)"}`,
+                            background: isSaving ? "var(--surface3)" : checked ? `${roleColor[role]}18` : "transparent",
+                            color: checked ? roleColor[role] : "transparent",
+                            fontSize: 11, fontWeight: 700,
+                            opacity: saving && !isSaving ? 0.5 : 1,
+                            transition: "all 0.15s",
+                          }}
                         >
-                          {checked && !isSaving && <span className="text-white text-xs">✓</span>}
+                          {checked && !isSaving ? "✓" : isSaving ? "…" : ""}
                         </button>
                       </td>
                     );
@@ -127,10 +125,9 @@ export default function RbacPage() {
         </div>
       )}
 
-      {/* Admin note */}
-      <div className="mt-4 bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-        <p className="text-xs font-semibold text-neutral-400 mb-2">Admin Role (fixed)</p>
-        <p className="text-xs text-neutral-600">Admin has full read + write + delete access to all resources. Admin permissions cannot be modified via this interface.</p>
+      <div style={{ marginTop: 14, background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "14px 16px" }}>
+        <p style={{ fontSize: 9, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 4, letterSpacing: 0.5 }}>Admin Role (fixed)</p>
+        <p style={{ fontSize: 10, color: "var(--text-dim)" }}>Admin has full read + write + delete access to all resources. Admin permissions cannot be modified via this interface.</p>
       </div>
     </div>
   );

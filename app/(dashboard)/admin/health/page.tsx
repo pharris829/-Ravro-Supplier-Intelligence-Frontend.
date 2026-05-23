@@ -14,125 +14,82 @@ export default function AdminHealthPage() {
   async function checkHealth() {
     setLastChecked(new Date());
     const results: ServiceStatus[] = [];
-
-    // API
     const t0 = Date.now();
-    try {
-      await getHealth();
-      results.push({ name: "API Server",    status: "ok",      latency: Date.now() - t0 });
-    } catch {
-      results.push({ name: "API Server",    status: "down",    detail: "Not reachable" });
-    }
-
-    // DB (via stats endpoint — if it works, DB is up)
+    try { await getHealth(); results.push({ name: "API Server",    status: "ok",       latency: Date.now() - t0 }); }
+    catch { results.push({ name: "API Server",    status: "down",     detail: "Not reachable" }); }
     const t1 = Date.now();
-    try {
-      const s = await getAdminStats();
-      setStats(s);
-      results.push({ name: "PostgreSQL",    status: "ok",      latency: Date.now() - t1 });
-    } catch {
-      results.push({ name: "PostgreSQL",    status: "down",    detail: "Stats endpoint failed" });
-    }
-
-    // Mock services
+    try { const s = await getAdminStats(); setStats(s); results.push({ name: "PostgreSQL", status: "ok", latency: Date.now() - t1 }); }
+    catch { results.push({ name: "PostgreSQL", status: "down", detail: "Stats endpoint failed" }); }
     results.push({ name: "Scoring Engine", status: "ok",      detail: "Cron: daily 02:00" });
     results.push({ name: "File Storage",   status: "ok",      detail: "Memory buffer (local)" });
     results.push({ name: "Email / Alerts", status: "degraded", detail: "Not configured" });
-
     setServices(results);
   }
 
   useEffect(() => { checkHealth(); }, []);
 
-  const STATUS_STYLES = {
-    ok:       { badge: "bg-emerald-950 text-emerald-400 border-emerald-900", dot: "bg-emerald-400" },
-    degraded: { badge: "bg-yellow-950 text-yellow-400 border-yellow-900",   dot: "bg-yellow-400"  },
-    down:     { badge: "bg-red-950 text-red-400 border-red-900",            dot: "bg-red-400"      },
-  };
-
+  const statusColor = { ok: "var(--mint)", degraded: "var(--amber)", down: "var(--red)" };
   const overall = services.some(s => s.status === "down") ? "down" : services.some(s => s.status === "degraded") ? "degraded" : "ok";
   const overallLabel = { ok: "All Systems Operational", degraded: "Partial Degradation", down: "Service Disruption" };
 
-  function fmt(s: number) {
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
-    return `${h}h ${m}m`;
-  }
+  function fmt(s: number) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60); return `${h}h ${m}m`; }
 
   return (
-    <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ maxWidth: 680 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
         <div>
-          <h1 className="text-2xl font-semibold text-white">System Health</h1>
-          <p className="text-xs text-neutral-500 mt-1">Last checked: {lastChecked.toLocaleTimeString()}</p>
+          <div style={{ fontSize: 7, letterSpacing: 2.5, color: "var(--text-dim)", marginBottom: 4 }} className="font-orbitron">ADMIN</div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>System Health</h1>
+          <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>Last checked: {lastChecked.toLocaleTimeString()}</p>
         </div>
-        <button onClick={checkHealth}
-          className="text-sm px-4 py-2 rounded-lg bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition-colors">
+        <button onClick={checkHealth} style={{ fontSize: 11, padding: "7px 14px", borderRadius: 4, background: "var(--surface3)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>
           Refresh
         </button>
       </div>
 
-      {/* Overall banner */}
       {services.length > 0 && (
-        <div className={`rounded-xl p-4 mb-6 border flex items-center gap-3 ${STATUS_STYLES[overall].badge}`}>
-          <span className={`w-2.5 h-2.5 rounded-full ${STATUS_STYLES[overall].dot} animate-pulse`} />
-          <span className="text-sm font-semibold">{overallLabel[overall]}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 4, marginBottom: 20, background: `${statusColor[overall]}10`, border: `1px solid ${statusColor[overall]}40` }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: statusColor[overall], flexShrink: 0, display: "inline-block" }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: statusColor[overall] }}>{overallLabel[overall]}</span>
         </div>
       )}
 
-      {/* Service cards */}
-      <div className="space-y-3 mb-6">
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
         {services.map(svc => (
-          <div key={svc.name} className="bg-neutral-900 border border-neutral-800 rounded-xl px-5 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className={`w-2 h-2 rounded-full ${STATUS_STYLES[svc.status].dot}`} />
+          <div key={svc.name} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: statusColor[svc.status], flexShrink: 0, display: "inline-block" }} />
               <div>
-                <p className="text-sm font-medium text-white">{svc.name}</p>
-                {svc.detail && <p className="text-xs text-neutral-500 mt-0.5">{svc.detail}</p>}
+                <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>{svc.name}</p>
+                {svc.detail && <p style={{ fontSize: 9, color: "var(--text-secondary)", margin: 0 }}>{svc.detail}</p>}
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {svc.latency != null && (
-                <span className="text-xs text-neutral-500 tabular-nums">{svc.latency}ms</span>
-              )}
-              <span className={`text-xs px-2 py-0.5 rounded border capitalize ${STATUS_STYLES[svc.status].badge}`}>
-                {svc.status}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {svc.latency != null && <span style={{ fontSize: 10, color: "var(--text-dim)" }}>{svc.latency}ms</span>}
+              <span style={{ fontSize: 8, padding: "2px 7px", borderRadius: 2, background: `${statusColor[svc.status]}10`, color: statusColor[svc.status], border: `1px solid ${statusColor[svc.status]}40`, textTransform: "capitalize", letterSpacing: 0.5 }}>{svc.status}</span>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Stats + uptime */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-4">Database Counts</h2>
-          <div className="space-y-2">
-            {[
-              { label: "Users",    value: stats?.users    },
-              { label: "Suppliers", value: stats?.suppliers },
-              { label: "Products", value: stats?.products  },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex justify-between text-sm">
-                <span className="text-neutral-400">{label}</span>
-                <span className="text-white font-medium tabular-nums">{value ?? "—"}</span>
-              </div>
-            ))}
-          </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "16px 18px" }}>
+          <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)", marginBottom: 12 }} className="font-orbitron">DATABASE COUNTS</div>
+          {[{ label: "Users", value: stats?.users }, { label: "Suppliers", value: stats?.suppliers }, { label: "Products", value: stats?.products }].map(({ label, value }) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{label}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)" }}>{value ?? "—"}</span>
+            </div>
+          ))}
         </div>
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-4">Runtime</h2>
-          <div className="space-y-2">
-            {[
-              { label: "Uptime",      value: fmt(uptime) },
-              { label: "Node.js",     value: "v24.x"     },
-              { label: "Environment", value: process.env.NODE_ENV ?? "development" },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex justify-between text-sm">
-                <span className="text-neutral-400">{label}</span>
-                <span className="text-white font-medium">{value}</span>
-              </div>
-            ))}
-          </div>
+        <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "16px 18px" }}>
+          <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)", marginBottom: 12 }} className="font-orbitron">RUNTIME</div>
+          {[{ label: "Uptime", value: fmt(uptime) }, { label: "Node.js", value: "v24.x" }, { label: "Environment", value: process.env.NODE_ENV ?? "development" }].map(({ label, value }) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{label}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)" }}>{value}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

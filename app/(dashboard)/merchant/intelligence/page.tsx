@@ -8,15 +8,15 @@ type SortKey = "match_score" | "demand_score" | "price";
 type Tier = "all" | "high" | "medium" | "low";
 
 function ScoreBar({ value }: { value?: number }) {
-  if (value == null) return <span className="text-neutral-600 text-xs">—</span>;
+  if (value == null) return <span style={{ color: "var(--text-dim)", fontSize: 10 }}>—</span>;
   const pct = Math.round(value * 100);
-  const color = value >= 0.75 ? "bg-emerald-500" : value >= 0.45 ? "bg-yellow-500" : "bg-red-500";
+  const color = value >= 0.75 ? "var(--mint)" : value >= 0.45 ? "var(--amber)" : "var(--red)";
   return (
-    <div className="flex items-center gap-2">
-      <div className="w-16 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
-        <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ width: 56, height: 3, background: "var(--surface3)", borderRadius: 2, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 2 }} />
       </div>
-      <span className="text-xs text-neutral-300 tabular-nums">{(value).toFixed(2)}</span>
+      <span style={{ fontSize: 10, color: "var(--text-secondary)", fontVariantNumeric: "tabular-nums" }}>{value.toFixed(2)}</span>
     </div>
   );
 }
@@ -24,18 +24,24 @@ function ScoreBar({ value }: { value?: number }) {
 function TierBadge({ score }: { score?: number }) {
   if (score == null) return null;
   const tier = score >= 0.75 ? "high" : score >= 0.45 ? "medium" : "low";
-  const styles = { high: "bg-emerald-950 text-emerald-400 border-emerald-900", medium: "bg-yellow-950 text-yellow-400 border-yellow-900", low: "bg-red-950 text-red-400 border-red-900" };
-  return <span className={`text-xs font-medium px-2 py-0.5 rounded border capitalize ${styles[tier]}`}>{tier}</span>;
+  const color = tier === "high" ? "var(--mint)" : tier === "medium" ? "var(--amber)" : "var(--red)";
+  const bg = tier === "high" ? "rgba(0,245,196,0.08)" : tier === "medium" ? "rgba(255,184,77,0.08)" : "rgba(255,75,110,0.08)";
+  const border = tier === "high" ? "rgba(0,245,196,0.25)" : tier === "medium" ? "rgba(255,184,77,0.25)" : "rgba(255,75,110,0.25)";
+  return (
+    <span style={{ fontSize: 8, padding: "2px 6px", borderRadius: 2, background: bg, color, border: `1px solid ${border}`, letterSpacing: 0.5, textTransform: "capitalize" }}>
+      {tier}
+    </span>
+  );
 }
 
 export default function IntelligencePage() {
-  const [products, setProducts]     = useState<Product[]>([]);
-  const [total, setTotal]           = useState(0);
-  const [loading, setLoading]       = useState(true);
-  const [query, setQuery]           = useState("");
-  const [tier, setTier]             = useState<Tier>("all");
-  const [sortKey, setSortKey]       = useState<SortKey>("match_score");
-  const [page, setPage]             = useState(1);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal]       = useState(0);
+  const [loading, setLoading]   = useState(true);
+  const [query, setQuery]       = useState("");
+  const [tier, setTier]         = useState<Tier>("all");
+  const [sortKey, setSortKey]   = useState<SortKey>("match_score");
+  const [page, setPage]         = useState(1);
   const LIMIT = 20;
 
   const load = useCallback(() => {
@@ -49,11 +55,7 @@ export default function IntelligencePage() {
             return tier === "high" ? s >= 0.75 : tier === "medium" ? s >= 0.45 && s < 0.75 : s < 0.45;
           });
         }
-        items.sort((a, b) => {
-          const av = (a[sortKey] ?? 0) as number;
-          const bv = (b[sortKey] ?? 0) as number;
-          return bv - av;
-        });
+        items.sort((a, b) => ((b[sortKey] ?? 0) as number) - ((a[sortKey] ?? 0) as number));
         setProducts(items);
         setTotal(r.pagination.total);
       })
@@ -63,57 +65,61 @@ export default function IntelligencePage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const avgScore = products.length
-    ? (products.reduce((s, p) => s + (p.match_score ?? 0), 0) / products.length).toFixed(2)
-    : "—";
-  const highCount   = products.filter(p => (p.match_score ?? 0) >= 0.75).length;
-  const medCount    = products.filter(p => { const s = p.match_score ?? 0; return s >= 0.45 && s < 0.75; }).length;
-  const lowCount    = products.filter(p => (p.match_score ?? 0) < 0.45).length;
+  const avgScore  = products.length ? (products.reduce((s, p) => s + (p.match_score ?? 0), 0) / products.length).toFixed(2) : "—";
+  const highCount = products.filter(p => (p.match_score ?? 0) >= 0.75).length;
+  const medCount  = products.filter(p => { const s = p.match_score ?? 0; return s >= 0.45 && s < 0.75; }).length;
+  const lowCount  = products.filter(p => (p.match_score ?? 0) < 0.45).length;
+
+  const summaryCards = [
+    { label: "Avg Opportunity",  value: avgScore,   color: "var(--text-primary)" },
+    { label: "High Opportunity", value: highCount,  color: "var(--mint)"         },
+    { label: "Medium",           value: medCount,   color: "var(--amber)"        },
+    { label: "Low",              value: lowCount,   color: "var(--red)"          },
+  ];
+
+  const tierOpts: Tier[] = ["all", "high", "medium", "low"];
 
   return (
-    <div className="max-w-6xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-white">Product Intelligence</h1>
-        <p className="text-sm text-neutral-400 mt-1">Demand signals, opportunity scores, and supplier quality</p>
+    <div style={{ maxWidth: 1000 }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 7, letterSpacing: 2.5, color: "var(--text-dim)", marginBottom: 4 }} className="font-orbitron">INTELLIGENCE</div>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Product Intelligence</h1>
+        <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>Demand signals, opportunity scores, and supplier quality</p>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {[
-          { label: "Avg Opportunity",  value: avgScore },
-          { label: "High Opportunity", value: highCount,   color: "text-emerald-400" },
-          { label: "Medium",           value: medCount,    color: "text-yellow-400"  },
-          { label: "Low",              value: lowCount,    color: "text-red-400"     },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-            <p className="text-xs text-neutral-500 mb-1">{label}</p>
-            <p className={`text-2xl font-semibold ${color || "text-white"}`}>{value}</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 18 }}>
+        {summaryCards.map(({ label, value, color }) => (
+          <div key={label} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "14px 16px" }}>
+            <p style={{ fontSize: 9, color: "var(--text-dim)", marginBottom: 5, letterSpacing: 0.3 }}>{label}</p>
+            <p style={{ fontSize: 24, fontWeight: 700, color, lineHeight: 1 }}>{value}</p>
           </div>
         ))}
       </div>
 
       {/* Controls */}
-      <div className="flex gap-3 mb-4 flex-wrap">
+      <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
         <input
           type="text"
           placeholder="Search products…"
           value={query}
           onChange={e => { setQuery(e.target.value); setPage(1); }}
-          className="flex-1 min-w-48 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          style={{ flex: 1, minWidth: 180, background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "7px 10px", fontSize: 11, color: "var(--text-primary)", outline: "none" }}
         />
-        <div className="flex gap-1 bg-neutral-900 border border-neutral-800 rounded-lg p-1">
-          {(["all","high","medium","low"] as Tier[]).map(t => (
-            <button key={t} onClick={() => { setTier(t); setPage(1); }}
-              className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors ${tier === t ? "bg-indigo-600 text-white" : "text-neutral-400 hover:text-white"}`}>
-              {t}
-            </button>
+        <div style={{ display: "flex", gap: 3, background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: 4 }}>
+          {tierOpts.map(t => (
+            <button key={t} onClick={() => { setTier(t); setPage(1); }} style={{
+              padding: "4px 10px", borderRadius: 3, fontSize: 10, fontWeight: 500,
+              textTransform: "capitalize", border: "none", cursor: "pointer",
+              background: tier === t ? "var(--mint)" : "transparent",
+              color: tier === t ? "var(--obsidian)" : "var(--text-secondary)",
+              transition: "all 0.15s",
+            }}>{t}</button>
           ))}
         </div>
-        <select
-          value={sortKey}
-          onChange={e => setSortKey(e.target.value as SortKey)}
-          className="bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
+        <select value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)} style={{
+          background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4,
+          padding: "7px 10px", fontSize: 11, color: "var(--text-primary)", outline: "none",
+        }}>
           <option value="match_score">Sort: Opportunity</option>
           <option value="demand_score">Sort: Demand</option>
           <option value="price">Sort: Price</option>
@@ -121,45 +127,48 @@ export default function IntelligencePage() {
       </div>
 
       {/* Table */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr className="border-b border-neutral-800">
+            <tr style={{ borderBottom: "1px solid var(--border)" }}>
               {["Product", "Category", "Price", "Demand", "Opportunity", "Tier", "Supplier"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-medium text-neutral-500">{h}</th>
+                <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontSize: 8, letterSpacing: 1, color: "var(--text-dim)", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-500 text-sm">Loading…</td></tr>
+              <tr><td colSpan={7} style={{ padding: "28px 14px", textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>Loading…</td></tr>
             ) : products.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-500 text-sm">No products found</td></tr>
+              <tr><td colSpan={7} style={{ padding: "28px 14px", textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>No products found</td></tr>
             ) : products.map(p => (
-              <tr key={p.id} className="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors">
-                <td className="px-4 py-3">
-                  <Link href={`/products/${p.id}`} className="text-white hover:text-indigo-400 font-medium">{p.product_name}</Link>
-                  {p.sku && <p className="text-xs text-neutral-600">{p.sku}</p>}
+              <tr key={p.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                <td style={{ padding: "10px 14px" }}>
+                  <Link href={`/products/${p.id}`} style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)", textDecoration: "none" }}>{p.product_name}</Link>
+                  {p.sku && <p style={{ fontSize: 9, color: "var(--text-dim)", marginTop: 2 }}>{p.sku}</p>}
                 </td>
-                <td className="px-4 py-3 text-neutral-400">{p.category || "—"}</td>
-                <td className="px-4 py-3 text-neutral-300">{p.price != null ? `$${p.price.toFixed(2)}` : "—"}</td>
-                <td className="px-4 py-3"><ScoreBar value={p.demand_score} /></td>
-                <td className="px-4 py-3"><ScoreBar value={p.match_score} /></td>
-                <td className="px-4 py-3"><TierBadge score={p.match_score} /></td>
-                <td className="px-4 py-3 text-neutral-400 text-xs">{p.supplier_name || "—"}</td>
+                <td style={{ padding: "10px 14px", fontSize: 10, color: "var(--text-secondary)" }}>{p.category || "—"}</td>
+                <td style={{ padding: "10px 14px", fontSize: 10, color: "var(--text-secondary)" }}>{p.price != null ? `$${p.price.toFixed(2)}` : "—"}</td>
+                <td style={{ padding: "10px 14px" }}><ScoreBar value={p.demand_score} /></td>
+                <td style={{ padding: "10px 14px" }}><ScoreBar value={p.match_score} /></td>
+                <td style={{ padding: "10px 14px" }}><TierBadge score={p.match_score} /></td>
+                <td style={{ padding: "10px 14px", fontSize: 10, color: "var(--text-secondary)" }}>{p.supplier_name || "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center gap-3 mt-4">
-        <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1}
-          className="px-3 py-1.5 text-xs rounded-md bg-neutral-800 text-neutral-300 disabled:opacity-40 hover:bg-neutral-700">Previous</button>
-        <span className="text-xs text-neutral-500">Page {page} · {total} total</span>
-        <button onClick={() => setPage(p => p+1)} disabled={products.length < LIMIT}
-          className="px-3 py-1.5 text-xs rounded-md bg-neutral-800 text-neutral-300 disabled:opacity-40 hover:bg-neutral-700">Next</button>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{
+          padding: "5px 12px", fontSize: 10, borderRadius: 4, background: "var(--surface3)",
+          color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer", opacity: page === 1 ? 0.4 : 1,
+        }}>Previous</button>
+        <span style={{ fontSize: 10, color: "var(--text-dim)" }}>Page {page} · {total} total</span>
+        <button onClick={() => setPage(p => p + 1)} disabled={products.length < LIMIT} style={{
+          padding: "5px 12px", fontSize: 10, borderRadius: 4, background: "var(--surface3)",
+          color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer", opacity: products.length < LIMIT ? 0.4 : 1,
+        }}>Next</button>
       </div>
     </div>
   );

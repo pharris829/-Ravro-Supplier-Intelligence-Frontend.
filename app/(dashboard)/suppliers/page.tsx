@@ -5,50 +5,54 @@ import Link from "next/link";
 import { getSuppliers, type Supplier } from "@/lib/api";
 
 export default function SuppliersPage() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [page, setPage] = useState(1);
+  const [suppliers,   setSuppliers]   = useState<Supplier[]>([]);
+  const [pagination,  setPagination]  = useState({ page: 1, pages: 1, total: 0 });
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState("");
+  const [page,        setPage]        = useState(1);
 
   useEffect(() => {
     setLoading(true);
     getSuppliers({ page, limit: 20 })
-      .then((r) => { setSuppliers(r.suppliers); setPagination(r.pagination); })
-      .catch((e) => setError(e.message))
+      .then(r => { setSuppliers(r.suppliers); setPagination(r.pagination); })
+      .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [page]);
 
   return (
-    <div className="max-w-5xl">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ maxWidth: 860 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
         <div>
-          <h1 className="text-2xl font-semibold text-white">Suppliers</h1>
-          <p className="text-sm text-neutral-400 mt-0.5">{pagination.total} total</p>
+          <div style={{ fontSize: 7, letterSpacing: 2.5, color: "var(--text-dim)", marginBottom: 4 }} className="font-orbitron">CATALOG</div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Suppliers</h1>
+          <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>{pagination.total} total</p>
         </div>
       </div>
 
-      {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
+      {error && <p style={{ fontSize: 11, color: "var(--red)", marginBottom: 12 }}>{error}</p>}
 
       {loading ? (
-        <div className="text-neutral-500 text-sm">Loading…</div>
+        <div style={{ fontSize: 11, color: "var(--text-dim)" }}>Loading…</div>
       ) : (
-        <div className="space-y-3">
-          {suppliers.map((s) => (
-            <Link
-              key={s.id}
-              href={`/suppliers/${s.id}`}
-              className="flex items-center justify-between bg-neutral-900 border border-neutral-800 hover:border-indigo-600 rounded-xl px-5 py-4 transition-colors group"
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {suppliers.map(s => (
+            <Link key={s.id} href={`/suppliers/${s.id}`} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4,
+              padding: "14px 18px", textDecoration: "none", transition: "border-color 0.15s",
+            }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-mint)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
             >
               <div>
-                <p className="text-sm font-medium text-white group-hover:text-indigo-400">{s.name}</p>
-                <p className="text-xs text-neutral-500 mt-0.5">
+                <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>{s.name}</p>
+                <p style={{ fontSize: 10, color: "var(--text-dim)", margin: "3px 0 0" }}>
                   {s.categories?.join(", ") || "—"} · {s.country || "—"}
                 </p>
               </div>
-              <div className="text-right text-xs text-neutral-400 space-y-0.5">
-                <p>Trust <span className="text-white font-medium">{s.trust_score ?? "—"}</span></p>
-                <p>Products <span className="text-white font-medium">{s.product_count ?? "—"}</span></p>
+              <div style={{ textAlign: "right", fontSize: 10, color: "var(--text-secondary)", flexShrink: 0, marginLeft: 16 }}>
+                <p style={{ margin: 0 }}>Trust <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{s.trust_score ?? "—"}</span></p>
+                <p style={{ margin: "3px 0 0" }}>Products <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{s.product_count ?? "—"}</span></p>
               </div>
             </Link>
           ))}
@@ -56,24 +60,10 @@ export default function SuppliersPage() {
       )}
 
       {pagination.pages > 1 && (
-        <div className="flex gap-2 mt-6">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="px-3 py-1.5 text-xs rounded-md bg-neutral-800 text-neutral-300 disabled:opacity-40 hover:bg-neutral-700"
-          >
-            Previous
-          </button>
-          <span className="px-3 py-1.5 text-xs text-neutral-500">
-            {page} / {pagination.pages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
-            disabled={page === pagination.pages}
-            className="px-3 py-1.5 text-xs rounded-md bg-neutral-800 text-neutral-300 disabled:opacity-40 hover:bg-neutral-700"
-          >
-            Next
-          </button>
+        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: "5px 12px", fontSize: 10, borderRadius: 4, background: "var(--surface3)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer", opacity: page === 1 ? 0.4 : 1 }}>Previous</button>
+          <span style={{ padding: "5px 10px", fontSize: 10, color: "var(--text-dim)" }}>{page} / {pagination.pages}</span>
+          <button onClick={() => setPage(p => Math.min(pagination.pages, p + 1))} disabled={page === pagination.pages} style={{ padding: "5px 12px", fontSize: 10, borderRadius: 4, background: "var(--surface3)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer", opacity: page === pagination.pages ? 0.4 : 1 }}>Next</button>
         </div>
       )}
     </div>

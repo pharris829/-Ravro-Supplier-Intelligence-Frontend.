@@ -5,20 +5,26 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getProduct, patchProduct, type Product } from "@/lib/api";
 
+const inputStyle: React.CSSProperties = {
+  width: "100%", background: "var(--surface3)", border: "1px solid var(--border)",
+  borderRadius: 4, padding: "7px 10px", fontSize: 11, color: "var(--text-primary)",
+  outline: "none", boxSizing: "border-box",
+};
+
 export default function EditProductPage() {
-  const { id }    = useParams<{ id: string }>();
-  const router    = useRouter();
+  const { id }   = useParams<{ id: string }>();
+  const router   = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [error,   setError]   = useState("");
 
-  const [price,        setPrice]        = useState("");
-  const [stock,        setStock]        = useState("");
-  const [brand,        setBrand]        = useState("");
-  const [description,  setDescription]  = useState("");
-  const [leadTime,     setLeadTime]     = useState("");
+  const [price,       setPrice]       = useState("");
+  const [stock,       setStock]       = useState("");
+  const [brand,       setBrand]       = useState("");
+  const [description, setDescription] = useState("");
+  const [leadTime,    setLeadTime]    = useState("");
 
   useEffect(() => {
     getProduct(id).then(r => {
@@ -35,9 +41,7 @@ export default function EditProductPage() {
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSaving(true);
-    setError("");
-    setSaved(false);
+    setSaving(true); setError(""); setSaved(false);
     try {
       const fields: Parameters<typeof patchProduct>[1] = {};
       if (price       !== "") fields.price          = parseFloat(price);
@@ -45,104 +49,69 @@ export default function EditProductPage() {
       if (brand       !== "") fields.brand          = brand;
       if (description !== "") fields.description    = description;
       if (leadTime    !== "") fields.lead_time_days = parseInt(leadTime);
-
       const r = await patchProduct(id, fields);
       setProduct(r.product);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   }
 
-  if (loading) return <div className="text-neutral-500 text-sm">Loading…</div>;
-  if (!product && !loading) return <div className="text-red-400 text-sm">Product not found.</div>;
+  if (loading) return <div style={{ fontSize: 11, color: "var(--text-dim)", padding: 16 }}>Loading…</div>;
+  if (!product) return <div style={{ fontSize: 11, color: "var(--red)", padding: 16 }}>Product not found.</div>;
+
+  const labelStyle: React.CSSProperties = { display: "block", fontSize: 9, color: "var(--text-secondary)", marginBottom: 5, letterSpacing: 0.3 };
 
   return (
-    <div className="max-w-2xl">
-      <Link href="/supplier/products" className="text-xs text-neutral-500 hover:text-white mb-4 inline-block">
+    <div style={{ maxWidth: 640 }}>
+      <Link href="/supplier/products" style={{ fontSize: 10, color: "var(--text-dim)", textDecoration: "none", display: "inline-block", marginBottom: 16 }}>
         ← Back to Product Feeds
       </Link>
 
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-white">{product?.product_name}</h1>
-        <p className="text-sm text-neutral-400 mt-0.5">{product?.category} · {product?.sku}</p>
+      <div style={{ marginBottom: 22 }}>
+        <h1 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{product.product_name}</h1>
+        <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>{product.category} · {product.sku}</p>
       </div>
 
-      {/* Read-only scores */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
         {[
-          { label: "Opportunity Score", value: product?.match_score?.toFixed(2) },
-          { label: "Demand Score",      value: product?.demand_score?.toFixed(2) },
-          { label: "Ingestion Status",  value: product?.ingestion_status },
-          { label: "Stock Quantity",    value: product?.stock_quantity },
+          { label: "Opportunity Score", value: product.match_score?.toFixed(2) },
+          { label: "Demand Score",      value: product.demand_score?.toFixed(2) },
+          { label: "Ingestion Status",  value: product.ingestion_status },
+          { label: "Stock Quantity",    value: product.stock_quantity },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-            <p className="text-xs text-neutral-500 mb-0.5">{label}</p>
-            <p className="text-white font-medium capitalize">{value ?? "—"}</p>
+          <div key={label} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "12px 14px" }}>
+            <p style={{ fontSize: 9, color: "var(--text-dim)", marginBottom: 4 }}>{label}</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", textTransform: "capitalize" }}>{value ?? "—"}</p>
           </div>
         ))}
       </div>
 
-      {/* Edit form */}
-      <form onSubmit={handleSave} className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-5">
-        <h2 className="text-sm font-semibold text-white">Update Product Details</h2>
+      <form onSubmit={handleSave} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "20px 22px" }}>
+        <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)", marginBottom: 16 }} className="font-orbitron">UPDATE PRODUCT</div>
 
-        {error && (
-          <div className="text-sm text-red-400 bg-red-950/40 border border-red-900 rounded-lg px-4 py-3">{error}</div>
-        )}
-        {saved && (
-          <div className="text-sm text-emerald-400 bg-emerald-950/40 border border-emerald-900 rounded-lg px-4 py-3">Saved successfully</div>
-        )}
+        {error && <div style={{ fontSize: 11, color: "var(--red)", background: "rgba(255,75,110,0.06)", border: "1px solid rgba(255,75,110,0.25)", borderRadius: 4, padding: "10px 12px", marginBottom: 14 }}>{error}</div>}
+        {saved && <div style={{ fontSize: 11, color: "var(--mint)", background: "rgba(0,245,196,0.06)", border: "1px solid rgba(0,245,196,0.25)", borderRadius: 4, padding: "10px 12px", marginBottom: 14 }}>Saved successfully</div>}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs text-neutral-400 mb-1.5">Price ($)</label>
-            <input type="number" step="0.01" min="0" value={price} onChange={e => setPrice(e.target.value)}
-              placeholder={product?.price?.toString() ?? "0.00"}
-              className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-          <div>
-            <label className="block text-xs text-neutral-400 mb-1.5">Stock Quantity</label>
-            <input type="number" min="0" value={stock} onChange={e => setStock(e.target.value)}
-              placeholder={product?.stock_quantity?.toString() ?? "0"}
-              className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div><label style={labelStyle}>Price ($)</label><input type="number" step="0.01" min="0" value={price} onChange={e => setPrice(e.target.value)} placeholder={product.price?.toString() ?? "0.00"} style={inputStyle} /></div>
+          <div><label style={labelStyle}>Stock Quantity</label><input type="number" min="0" value={stock} onChange={e => setStock(e.target.value)} placeholder={product.stock_quantity?.toString() ?? "0"} style={inputStyle} /></div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div><label style={labelStyle}>Brand</label><input type="text" value={brand} onChange={e => setBrand(e.target.value)} placeholder={product.brand ?? "Brand name"} style={inputStyle} /></div>
+          <div><label style={labelStyle}>Lead Time (days)</label><input type="number" min="0" value={leadTime} onChange={e => setLeadTime(e.target.value)} placeholder="e.g. 3" style={inputStyle} /></div>
+        </div>
+        <div style={{ marginBottom: 18 }}>
+          <label style={labelStyle}>Description</label>
+          <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} placeholder={product.description ?? "Product description"} style={{ ...inputStyle, resize: "none" }} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs text-neutral-400 mb-1.5">Brand</label>
-            <input type="text" value={brand} onChange={e => setBrand(e.target.value)}
-              placeholder={product?.brand ?? "Brand name"}
-              className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-          <div>
-            <label className="block text-xs text-neutral-400 mb-1.5">Lead Time (days)</label>
-            <input type="number" min="0" value={leadTime} onChange={e => setLeadTime(e.target.value)}
-              placeholder="e.g. 3"
-              className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs text-neutral-400 mb-1.5">Description</label>
-          <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)}
-            placeholder={product?.description ?? "Product description"}
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
-        </div>
-
-        <div className="flex gap-3 pt-1">
-          <button type="submit" disabled={saving}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
+        <div style={{ display: "flex", gap: 10 }}>
+          <button type="submit" disabled={saving} style={{ background: "var(--mint)", color: "var(--obsidian)", border: "none", borderRadius: 4, padding: "8px 18px", fontSize: 11, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
             {saving ? "Saving…" : "Save changes"}
           </button>
-          <button type="button" onClick={() => router.back()}
-            className="text-sm text-neutral-400 hover:text-white px-3 py-2.5 rounded-lg hover:bg-neutral-800 transition-colors">
-            Cancel
-          </button>
+          <button type="button" onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--text-secondary)", fontSize: 11, cursor: "pointer", padding: "8px 12px" }}>Cancel</button>
         </div>
       </form>
     </div>

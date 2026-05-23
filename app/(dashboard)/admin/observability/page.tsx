@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   getObservabilityOverview, getRequestLogs, getErrorLogs,
   resolveErrorLog, deleteErrorLog, clearResolvedErrors, getObsMetrics, getObsEvents,
@@ -57,6 +57,7 @@ export default function ObservabilityPage() {
   const [metrics,  setMetrics] = useState<ObsMetrics | null>(null);
   const [events,   setEvents] = useState<ObsEvent[]>([]);
   const [loading,  setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [reqFilter, setReqFilter] = useState<"all"|"2xx"|"4xx"|"5xx">("all");
   const [reqPath, setReqPath]    = useState("");
   const [errResolved, setErrResolved] = useState(false);
@@ -66,8 +67,13 @@ export default function ObservabilityPage() {
   const [expandedErr, setExpandedErr] = useState<string|null>(null);
 
   const loadOverview = useCallback(async () => {
-    const r = await getObservabilityOverview().catch(() => null);
-    if (r) setOV(r);
+    try {
+      const r = await getObservabilityOverview();
+      setOV(r);
+      setApiError(null);
+    } catch (err: unknown) {
+      setApiError(err instanceof Error ? err.message : "Failed to load observability data");
+    }
   }, []);
 
   const loadRequests = useCallback(async () => {
@@ -155,6 +161,12 @@ export default function ObservabilityPage() {
         ))}
       </div>
 
+      {apiError && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-red-950 border border-red-900 text-red-400 text-sm">
+          <span className="font-semibold">API Error: </span>{apiError}
+        </div>
+      )}
+
       {loading && tab === "overview" ? (
         <div className="grid grid-cols-4 gap-3">
           {[...Array(8)].map((_, i) => <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl h-20 animate-pulse" />)}
@@ -162,6 +174,11 @@ export default function ObservabilityPage() {
       ) : (
         <>
           {/* ─── OVERVIEW ─── */}
+          {tab === "overview" && !rt && !apiError && (
+            <div className="text-center py-16 text-neutral-500 text-sm">
+              No data yet — make some API requests and refresh.
+            </div>
+          )}
           {tab === "overview" && rt && (
             <div>
               <div className="grid grid-cols-6 gap-3 mb-6">
@@ -277,8 +294,8 @@ export default function ObservabilityPage() {
                     {requests.length === 0 ? (
                       <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-500 text-sm">No requests yet — they appear as you use the API</td></tr>
                     ) : requests.map(r => (
-                      <>
-                        <tr key={r.id} className={`border-b border-neutral-800/50 hover:bg-neutral-800/20 transition-colors cursor-pointer ${expandedReq === r.id ? "bg-neutral-800/30" : ""}`}
+                      <React.Fragment key={r.id}>
+                        <tr className={`border-b border-neutral-800/50 hover:bg-neutral-800/20 transition-colors cursor-pointer ${expandedReq === r.id ? "bg-neutral-800/30" : ""}`}
                           onClick={() => setExpandedReq(expandedReq === r.id ? null : r.id)}>
                           <td className="px-3 py-2.5"><RelTime iso={r.created_at} /></td>
                           <td className="px-3 py-2.5"><span className="text-xs font-mono text-neutral-400">{r.method}</span></td>
@@ -289,7 +306,7 @@ export default function ObservabilityPage() {
                           <td className="px-3 py-2.5 text-xs text-indigo-500">{expandedReq === r.id ? "▲" : "▼"}</td>
                         </tr>
                         {expandedReq === r.id && (
-                          <tr key={`${r.id}-detail`} className="bg-neutral-800/20 border-b border-neutral-800">
+                          <tr className="bg-neutral-800/20 border-b border-neutral-800">
                             <td colSpan={7} className="px-4 py-3">
                               <div className="grid grid-cols-3 gap-3 text-xs font-mono">
                                 <div><span className="text-neutral-500">IP: </span><span className="text-neutral-300">{r.ip_address ?? "—"}</span></div>
@@ -299,7 +316,7 @@ export default function ObservabilityPage() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>

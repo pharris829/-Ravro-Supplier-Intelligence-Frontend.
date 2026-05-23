@@ -5,32 +5,37 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logout } from "@/lib/api";
 import { getCurrentUser, type CurrentUser } from "@/lib/auth";
+import { getFlag } from "@/lib/flags";
 
-const merchantNav = [
+type NavItem = { href: string; label: string; flag?: string };
+
+const merchantNav: NavItem[] = [
   { href: "/merchant",                  label: "Dashboard"       },
   { href: "/merchant/intelligence",     label: "Intelligence"    },
+  { href: "/map",                       label: "Global Map"      },
   { href: "/merchant/trends",           label: "Trends"          },
   { href: "/merchant/recommendations",  label: "Recommendations" },
   { href: "/merchant/workflows",        label: "Workflows"       },
   { href: "/merchant/automation",       label: "Automation"      },
   { href: "/merchant/inventory",        label: "Inventory Sync"  },
-  { href: "/merchant/integrations",     label: "Integrations"    },
-  { href: "/merchant/billing",          label: "Billing"         },
+  { href: "/merchant/integrations",     label: "Integrations",   flag: "shopify_sync" },
+  { href: "/merchant/billing",          label: "Billing",        flag: "billing_module" },
   { href: "/developer",                 label: "Developer"       },
   { href: "/settings",                  label: "Settings"        },
 ];
 
-const supplierNav = [
+const supplierNav: NavItem[] = [
   { href: "/supplier",             label: "Dashboard"       },
   { href: "/supplier/products",    label: "Product Feeds"   },
-  { href: "/supplier/access",      label: "Merchant Access" },
-  { href: "/supplier/analytics",   label: "Analytics"       },
+  { href: "/map",                  label: "Global Map"      },
+  { href: "/supplier/access",      label: "Merchant Access", flag: "merchant_access_requests" },
+  { href: "/supplier/analytics",   label: "Analytics",       flag: "supplier_analytics" },
   { href: "/ingest",               label: "Ingest CSV"      },
   { href: "/developer",            label: "Developer"       },
   { href: "/settings",             label: "Settings"        },
 ];
 
-const adminNav = [
+const adminNav: NavItem[] = [
   { href: "/admin",                label: "Console"         },
   { href: "/admin/users",          label: "Users"           },
   { href: "/admin/suppliers",      label: "Onboarding"      },
@@ -47,14 +52,20 @@ const adminNav = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [user,    setUser]    = useState<CurrentUser | null>(null);
+  const [visibleNav, setVisibleNav] = useState<NavItem[]>([]);
 
-  useEffect(() => { setUser(getCurrentUser()); }, []);
+  useEffect(() => {
+    const u = getCurrentUser();
+    setUser(u);
+    const base =
+      u?.role === "merchant" ? merchantNav :
+      u?.role === "supplier" ? supplierNav :
+      adminNav;
+    setVisibleNav(base.filter(item => !item.flag || getFlag(item.flag)));
+  }, []);
 
-  const nav =
-    user?.role === "merchant" ? merchantNav :
-    user?.role === "supplier" ? supplierNav :
-    adminNav;
+  const nav = visibleNav;
 
   return (
     <aside style={{

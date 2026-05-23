@@ -17,28 +17,25 @@ const STORAGE_KEY = "ravro_admin_logs";
 
 function seedLogs(batches: AdminBatch[]): LogEntry[] {
   const base: LogEntry[] = [
-    { id: "l1", ts: new Date(Date.now() - 60000).toISOString(),     level: "info",  source: "scoring",   message: "Daily scoring job scheduled (02:00)" },
-    { id: "l2", ts: new Date(Date.now() - 120000).toISOString(),    level: "info",  source: "server",    message: "Ravro backend running on http://localhost:4000" },
-    { id: "l3", ts: new Date(Date.now() - 180000).toISOString(),    level: "info",  source: "db",        message: "Connected to PostgreSQL" },
-    { id: "l4", ts: new Date(Date.now() - 3600000).toISOString(),   level: "warn",  source: "auth",      message: "Failed login attempt: unknown@example.com" },
-    { id: "l5", ts: new Date(Date.now() - 7200000).toISOString(),   level: "error", source: "scoring",   message: "Scoring run skipped: no unscored products found" },
-    { id: "l6", ts: new Date(Date.now() - 86400000).toISOString(),  level: "info",  source: "ingest",    message: "Batch completed: 5 products ingested" },
+    { id: "l1", ts: new Date(Date.now() - 60000).toISOString(),    level: "info",  source: "scoring", message: "Daily scoring job scheduled (02:00)" },
+    { id: "l2", ts: new Date(Date.now() - 120000).toISOString(),   level: "info",  source: "server",  message: "Ravro backend running on http://localhost:4000" },
+    { id: "l3", ts: new Date(Date.now() - 180000).toISOString(),   level: "info",  source: "db",      message: "Connected to PostgreSQL" },
+    { id: "l4", ts: new Date(Date.now() - 3600000).toISOString(),  level: "warn",  source: "auth",    message: "Failed login attempt: unknown@example.com" },
+    { id: "l5", ts: new Date(Date.now() - 7200000).toISOString(),  level: "error", source: "scoring", message: "Scoring run skipped: no unscored products found" },
+    { id: "l6", ts: new Date(Date.now() - 86400000).toISOString(), level: "info",  source: "ingest",  message: "Batch completed: 5 products ingested" },
   ];
   const batchLogs: LogEntry[] = batches.map((b, i) => ({
-    id: `batch-${i}`,
-    ts: b.created_at,
+    id: `batch-${i}`, ts: b.created_at,
     level: b.error_count > 0 ? "warn" as const : "info" as const,
     source: "ingest",
-    message: `Batch ${b.id.slice(0, 8)}: ${b.filename} — ${b.processed_rows}/${b.total_rows} rows (${b.error_count} errors)`,
+    message: `Batch ${b.id.slice(0,8)}: ${b.filename} — ${b.processed_rows}/${b.total_rows} rows (${b.error_count} errors)`,
   }));
   return [...base, ...batchLogs].sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
 }
 
-const LEVEL_STYLES: Record<string, string> = {
-  info:  "text-blue-400  bg-blue-950  border-blue-900",
-  warn:  "text-yellow-400 bg-yellow-950 border-yellow-900",
-  error: "text-red-400   bg-red-950   border-red-900",
-};
+function levelColor(l: string): string {
+  return l === "info" ? "var(--blue)" : l === "warn" ? "var(--amber)" : "var(--red)";
+}
 
 export default function AdminLogsPage() {
   const [logs,    setLogs]    = useState<LogEntry[]>([]);
@@ -47,15 +44,11 @@ export default function AdminLogsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getAdminBatches()
-      .then(r => setLogs(seedLogs(r.batches)))
-      .catch(() => setLogs(seedLogs([])))
-      .finally(() => setLoading(false));
+    getAdminBatches().then(r => setLogs(seedLogs(r.batches))).catch(() => setLogs(seedLogs([]))).finally(() => setLoading(false));
   }, []);
 
   function addLog(level: LogEntry["level"], source: string, message: string) {
-    const entry: LogEntry = { id: crypto.randomUUID(), ts: new Date().toISOString(), level, source, message };
-    setLogs(prev => [entry, ...prev]);
+    setLogs(prev => [{ id: crypto.randomUUID(), ts: new Date().toISOString(), level, source, message }, ...prev]);
   }
 
   const filtered = logs.filter(l => {
@@ -65,64 +58,55 @@ export default function AdminLogsPage() {
   });
 
   return (
-    <div className="max-w-5xl">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ maxWidth: 900 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
         <div>
-          <h1 className="text-2xl font-semibold text-white">Logs & Events</h1>
-          <p className="text-sm text-neutral-400 mt-1">{logs.length} entries</p>
+          <div style={{ fontSize: 7, letterSpacing: 2.5, color: "var(--text-dim)", marginBottom: 4 }} className="font-orbitron">ADMIN</div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Logs & Events</h1>
+          <p style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>{logs.length} entries</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => addLog("info", "admin", "Manual log entry added")}
-            className="text-xs px-3 py-1.5 rounded-md bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition-colors">
-            + Test log
-          </button>
-          <button onClick={() => setLogs([])}
-            className="text-xs px-3 py-1.5 rounded-md bg-red-950 text-red-400 hover:bg-red-900 transition-colors">
-            Clear
-          </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => addLog("info", "admin", "Manual log entry added")} style={{ fontSize: 10, padding: "5px 12px", borderRadius: 4, background: "var(--surface3)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer" }}>+ Test log</button>
+          <button onClick={() => setLogs([])} style={{ fontSize: 10, padding: "5px 12px", borderRadius: 4, background: "rgba(255,75,110,0.08)", color: "var(--red)", border: "1px solid rgba(255,75,110,0.25)", cursor: "pointer" }}>Clear</button>
         </div>
       </div>
 
-      {/* Counts */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
         {(["info","warn","error"] as const).map(l => (
-          <div key={l} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-            <p className="text-xs text-neutral-500 mb-1 capitalize">{l}</p>
-            <p className={`text-2xl font-semibold ${LEVEL_STYLES[l].split(" ")[0]}`}>
-              {logs.filter(e => e.level === l).length}
-            </p>
+          <div key={l} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "12px 16px" }}>
+            <p style={{ fontSize: 9, color: "var(--text-dim)", marginBottom: 4, textTransform: "capitalize" }}>{l}</p>
+            <p style={{ fontSize: 22, fontWeight: 700, color: levelColor(l), lineHeight: 1 }}>{logs.filter(e => e.level === l).length}</p>
           </div>
         ))}
       </div>
 
-      {/* Controls */}
-      <div className="flex gap-3 mb-4">
+      <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
         <input type="text" placeholder="Search logs…" value={query} onChange={e => setQuery(e.target.value)}
-          className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-red-600" />
-        <div className="flex gap-1 bg-neutral-900 border border-neutral-800 rounded-lg p-1">
+          style={{ flex: 1, background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "7px 10px", fontSize: 11, color: "var(--text-primary)", outline: "none" }} />
+        <div style={{ display: "flex", gap: 4, background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: 4 }}>
           {(["all","info","warn","error"] as Level[]).map(l => (
-            <button key={l} onClick={() => setFilter(l)}
-              className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors ${filter === l ? "bg-red-700 text-white" : "text-neutral-400 hover:text-white"}`}>
-              {l}
-            </button>
+            <button key={l} onClick={() => setFilter(l)} style={{
+              padding: "4px 10px", borderRadius: 3, fontSize: 10, fontWeight: 500, textTransform: "capitalize", border: "none", cursor: "pointer",
+              background: filter === l ? (l === "all" ? "var(--surface3)" : `${levelColor(l)}22`) : "transparent",
+              color: filter === l ? (l === "all" ? "var(--text-primary)" : levelColor(l)) : "var(--text-secondary)",
+            }}>{l}</button>
           ))}
         </div>
       </div>
 
-      {/* Log list */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden font-mono">
+      <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, overflow: "hidden", fontFamily: "monospace" }}>
         {loading ? (
-          <div className="px-4 py-8 text-center text-neutral-500 text-sm">Loading…</div>
+          <div style={{ padding: "28px", textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>Loading…</div>
         ) : filtered.length === 0 ? (
-          <div className="px-4 py-8 text-center text-neutral-500 text-sm">No logs matching filter</div>
+          <div style={{ padding: "28px", textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>No logs matching filter</div>
         ) : (
-          <div className="divide-y divide-neutral-800/50 max-h-[600px] overflow-y-auto">
+          <div style={{ maxHeight: 520, overflowY: "auto" }}>
             {filtered.map(log => (
-              <div key={log.id} className="px-4 py-2.5 flex items-start gap-3 hover:bg-neutral-800/20 text-xs">
-                <span className="text-neutral-600 shrink-0 tabular-nums w-20">{new Date(log.ts).toLocaleTimeString()}</span>
-                <span className={`shrink-0 px-1.5 py-0.5 rounded border text-xs uppercase font-bold ${LEVEL_STYLES[log.level]}`}>{log.level}</span>
-                <span className="text-indigo-400 shrink-0 w-16">[{log.source}]</span>
-                <span className="text-neutral-300 flex-1">{log.message}</span>
+              <div key={log.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "7px 14px", borderBottom: "1px solid var(--border)" }}>
+                <span style={{ fontSize: 9, color: "var(--text-dim)", flexShrink: 0, width: 72 }}>{new Date(log.ts).toLocaleTimeString()}</span>
+                <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 2, background: `${levelColor(log.level)}15`, color: levelColor(log.level), border: `1px solid ${levelColor(log.level)}40`, flexShrink: 0, letterSpacing: 0.5 }}>{log.level.toUpperCase()}</span>
+                <span style={{ fontSize: 9, color: "var(--mint)", flexShrink: 0, width: 60 }}>[{log.source}]</span>
+                <span style={{ fontSize: 10, color: "var(--text-secondary)", flex: 1 }}>{log.message}</span>
               </div>
             ))}
           </div>

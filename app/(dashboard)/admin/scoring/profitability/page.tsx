@@ -7,12 +7,12 @@ import { getScoringConfig, updateScoringConfig, getScoringDistributions, getScor
 function DistributionBar({ buckets }: { buckets: ScoreBucket[] }) {
   const max = Math.max(...buckets.map(b => b.count), 1);
   return (
-    <div className="flex items-end gap-1 h-24">
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 80 }}>
       {buckets.map(b => (
-        <div key={b.bucket} className="flex-1 flex flex-col items-center gap-1">
-          <span className="text-xs text-neutral-600 tabular-nums">{b.count || ""}</span>
-          <div className="w-full bg-purple-500 rounded-t opacity-70" style={{ height: `${Math.max(4, (b.count / max) * 64)}px` }} />
-          <span style={{ fontSize: 9 }} className="text-neutral-600">{b.bucket.split("–")[0]}</span>
+        <div key={b.bucket} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+          <span style={{ fontSize: 8, color: "var(--text-dim)" }}>{b.count || ""}</span>
+          <div style={{ width: "100%", background: "#a855f7", borderRadius: "2px 2px 0 0", opacity: 0.7, height: `${Math.max(4, (b.count / max) * 56)}px` }} />
+          <span style={{ fontSize: 8, color: "var(--text-dim)" }}>{b.bucket.split("–")[0]}</span>
         </div>
       ))}
     </div>
@@ -37,93 +37,77 @@ export default function ProfitabilityModelPage() {
     setConfigs(prev => prev.map(c => c.key === key ? r.config : c));
   }
 
-  const tiers = [
-    { label: "High  (≥$50)",    factor: "0.90", color: "text-emerald-400" },
-    { label: "Mid   (≥$20)",    factor: "0.70", color: "text-yellow-400"  },
-    { label: "Low   (≥$10)",    factor: "0.50", color: "text-orange-400"  },
-    { label: "Entry (<$10)",    factor: "0.30", color: "text-red-400"     },
-  ];
-
   return (
-    <div className="max-w-4xl">
-      <Link href="/admin/scoring" className="text-xs text-neutral-500 hover:text-white mb-4 inline-block">← Scoring Models</Link>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-3 h-3 rounded-full bg-purple-500" />
-        <h1 className="text-2xl font-semibold text-white">Profitability Score</h1>
+    <div style={{ maxWidth: 800 }}>
+      <Link href="/admin/scoring" style={{ fontSize: 10, color: "var(--text-dim)", textDecoration: "none", display: "inline-block", marginBottom: 16 }}>← Scoring Models</Link>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
+        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#a855f7" }} />
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Profitability Score</h1>
       </div>
 
-      <div className="bg-neutral-900 border border-purple-900 rounded-xl p-5 mb-6">
-        <h2 className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Algorithm</h2>
-        <code className="text-sm text-neutral-300 leading-relaxed block">
-          profitability = (<span className="text-purple-400">demand</span> × w₁) + ((1 − <span className="text-purple-400">saturation</span>) × w₂) + (<span className="text-purple-400">price_tier</span> × w₃)
+      <div style={{ background: "var(--surface2)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 4, padding: "16px 18px", marginBottom: 18 }}>
+        <div style={{ fontSize: 7, letterSpacing: 2, color: "#a855f7", marginBottom: 10 }} className="font-orbitron">ALGORITHM</div>
+        <code style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 2 }}>
+          profitability = (<span style={{ color: "#a855f7" }}>demand</span> × w₁) + ((1 − <span style={{ color: "#a855f7" }}>saturation</span>) × w₂) + (<span style={{ color: "#a855f7" }}>price_tier</span> × w₃)
         </code>
-        <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-neutral-500">
-          <div className="bg-neutral-800 rounded-lg p-3">
-            <p className="text-purple-400 font-medium mb-1">demand component</p>
-            <p>Products with high demand have larger addressable markets — more volume potential</p>
-          </div>
-          <div className="bg-neutral-800 rounded-lg p-3">
-            <p className="text-purple-400 font-medium mb-1">market position</p>
-            <p>Low saturation means less price competition and better margin preservation</p>
-          </div>
-          <div className="bg-neutral-800 rounded-lg p-3">
-            <p className="text-purple-400 font-medium mb-1">price tier</p>
-            <p>Higher-priced products generally carry better absolute margins (threshold configurable)</p>
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginTop: 12 }}>
+          {[
+            { name: "demand component",  desc: "Products with high demand have larger addressable markets." },
+            { name: "market position",   desc: "Low saturation = less competition and better margin preservation." },
+            { name: "price tier",        desc: "Higher-priced products generally carry better absolute margins." },
+          ].map(({ name, desc }) => (
+            <div key={name} style={{ background: "var(--surface3)", borderRadius: 4, padding: "10px 12px" }}>
+              <p style={{ fontSize: 9, color: "#a855f7", fontWeight: 600, marginBottom: 4 }}>{name}</p>
+              <p style={{ fontSize: 9, color: "var(--text-dim)" }}>{desc}</p>
+            </div>
+          ))}
         </div>
-
-        {/* Price tier table */}
-        <div className="mt-4">
-          <p className="text-xs text-neutral-600 mb-2">Price tier factors (thresholds configurable below):</p>
-          <div className="flex gap-4">
-            {tiers.map(t => (
-              <div key={t.label} className="bg-neutral-800 rounded-lg px-3 py-1.5 text-xs">
-                <span className="text-neutral-400">{t.label} → </span>
-                <span className={t.color}>{t.factor}</span>
-              </div>
-            ))}
-          </div>
+        <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+          {[{ label: "High (≥$50)", v: "0.90", c: "var(--mint)" }, { label: "Mid (≥$20)", v: "0.70", c: "var(--amber)" }, { label: "Low (≥$10)", v: "0.50", c: "var(--text-secondary)" }, { label: "Entry (<$10)", v: "0.30", c: "var(--red)" }].map(({ label, v, c }) => (
+            <div key={label} style={{ background: "var(--surface3)", borderRadius: 4, padding: "5px 10px", fontSize: 9 }}>
+              <span style={{ color: "var(--text-secondary)" }}>{label} → </span><span style={{ color: c, fontWeight: 600 }}>{v}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-5 mb-6">
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-4">Score Distribution</h2>
-          {buckets.length > 0 ? <DistributionBar buckets={buckets} /> : <p className="text-neutral-500 text-sm">No data yet — run scoring</p>}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+        <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "16px 18px" }}>
+          <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)", marginBottom: 12 }} className="font-orbitron">SCORE DISTRIBUTION</div>
+          {buckets.length > 0 ? <DistributionBar buckets={buckets} /> : <p style={{ fontSize: 11, color: "var(--text-dim)" }}>No data yet — run scoring</p>}
         </div>
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-2">Parameters</h2>
-          <div className="max-h-64 overflow-y-auto">
+        <div style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, padding: "16px 18px" }}>
+          <div style={{ fontSize: 7, letterSpacing: 2, color: "var(--text-dim)", marginBottom: 10 }} className="font-orbitron">PARAMETERS</div>
+          <div style={{ maxHeight: 240, overflowY: "auto" }}>
             {configs.map(c => (
-              <div key={c.key} className="flex items-center justify-between py-2.5 border-b border-neutral-800 last:border-0">
-                <div className="flex-1 pr-3">
-                  <p className="text-sm text-white">{c.label}</p>
-                  <p className="text-xs text-neutral-600 truncate">{c.description}</p>
+              <div key={c.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
+                <div style={{ flex: 1, paddingRight: 10 }}>
+                  <p style={{ fontSize: 11, color: "var(--text-primary)", margin: 0 }}>{c.label}</p>
+                  <p style={{ fontSize: 9, color: "var(--text-dim)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.description}</p>
                 </div>
                 <input type="number" step={c.key.includes("tier") ? "1" : "0.05"} min="0"
-                  defaultValue={c.value}
-                  onBlur={e => handleSave(c.key, parseFloat(e.target.value))}
-                  className="w-20 bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-sm text-white text-right focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                  defaultValue={c.value} onBlur={e => handleSave(c.key, parseFloat(e.target.value))}
+                  style={{ width: 72, background: "var(--surface3)", border: "1px solid var(--border)", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "var(--text-primary)", outline: "none", textAlign: "right" }} />
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        {[{ label: "Most Profitable", items: top, color: "text-purple-400" }, { label: "Least Profitable", items: bottom, color: "text-neutral-500" }].map(({ label, items, color }) => (
-          <div key={label} className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-neutral-800"><h3 className="text-xs font-semibold text-neutral-400">{label}</h3></div>
-            <table className="w-full text-xs">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {[{ label: "Most Profitable", items: top, color: "#a855f7" }, { label: "Least Profitable", items: bottom, color: "var(--text-dim)" }].map(({ label, items, color }) => (
+          <div key={label} style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border)", fontSize: 9, letterSpacing: 1, color: "var(--text-dim)" }}>{label}</div>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <tbody>
                 {items.map(p => (
-                  <tr key={p.id} className="border-b border-neutral-800/40">
-                    <td className="px-4 py-2 text-white">{p.product_name}</td>
-                    <td className="px-4 py-2 text-neutral-500">${p.price?.toFixed(0) ?? "—"}</td>
-                    <td className={`px-4 py-2 font-semibold tabular-nums text-right ${color}`}>{(p as unknown as { profitability_score?: number }).profitability_score?.toFixed(2) ?? "—"}</td>
+                  <tr key={p.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td style={{ padding: "8px 14px", fontSize: 10, color: "var(--text-primary)" }}>{p.product_name}</td>
+                    <td style={{ padding: "8px 14px", fontSize: 9, color: "var(--text-dim)" }}>${p.price?.toFixed(0) ?? "—"}</td>
+                    <td style={{ padding: "8px 14px", fontSize: 11, fontWeight: 700, color, textAlign: "right" }}>{(p as unknown as { profitability_score?: number }).profitability_score?.toFixed(2) ?? "—"}</td>
                   </tr>
                 ))}
-                {items.length === 0 && <tr><td colSpan={3} className="px-4 py-4 text-center text-neutral-600">No data</td></tr>}
+                {items.length === 0 && <tr><td colSpan={3} style={{ padding: "16px", textAlign: "center", fontSize: 10, color: "var(--text-dim)" }}>No data</td></tr>}
               </tbody>
             </table>
           </div>
